@@ -260,9 +260,10 @@ const MODE = {
   SUDDEN: "sudden",
 };
 
-function initialTiles() {
+function initialTiles(activeTileNums) {
+  const nums = activeTileNums || Array.from({ length: TOTAL_TILES }, (_, i) => i + 1);
   const t = {};
-  for (let i = 1; i <= TOTAL_TILES; i++) t[i] = "open";
+  nums.forEach(n => { t[n] = "open"; });
   return t;
 }
 
@@ -293,14 +294,36 @@ function validCombos(total, tileStates) {
 
 // ─── Setup Screen ────────────────────────────────────────────────────────────
 
+const BOARD_PRESETS = {
+  classic: { label: "Classic", desc: "1–9", tiles: [1,2,3,4,5,6,7,8,9] },
+  full:    { label: "Full",    desc: "1–12", tiles: [1,2,3,4,5,6,7,8,9,10,11,12] },
+  custom:  { label: "Custom",  desc: "Pick your own", tiles: null },
+};
+
 function SetupScreen({ onStart }) {
   const [mode, setMode] = useState(MODE.SOLO);
   const [numPlayers, setNumPlayers] = useState(2);
   const [names, setNames] = useState(["", "", "", ""]);
+  const [boardPreset, setBoardPreset] = useState("full");
+  const [customTiles, setCustomTiles] = useState([1,2,3,4,5,6,7,8,9,10,11,12]);
 
   const maxPlayers = mode === MODE.SUDDEN ? 2 : mode === MODE.SOLO ? 1 : 4;
   const minPlayers = mode === MODE.SOLO ? 1 : 2;
   const actualNum = mode === MODE.SOLO ? 1 : Math.min(Math.max(numPlayers, minPlayers), maxPlayers);
+
+  const activeTiles = boardPreset === "custom"
+    ? customTiles
+    : BOARD_PRESETS[boardPreset].tiles;
+
+  function toggleCustomTile(n) {
+    setCustomTiles(prev => {
+      if (prev.includes(n)) {
+        if (prev.length <= 6) return prev; // minimum 6 tiles
+        return prev.filter(t => t !== n);
+      }
+      return [...prev, n].sort((a, b) => a - b);
+    });
+  }
 
   function updateName(i, val) {
     const n = [...names]; n[i] = val; setNames(n);
@@ -310,11 +333,11 @@ function SetupScreen({ onStart }) {
     const playerNames = Array.from({ length: actualNum }, (_, i) =>
       names[i].trim() || (mode === MODE.SOLO ? "You" : `Player ${i + 1}`)
     );
-    onStart({ mode, players: playerNames });
+    onStart({ mode, players: playerNames, activeTiles });
   }
 
   const MODES = [
-    { id: MODE.SOLO,    label: "Solo",         desc: "Play alone. Close all 12 tiles for a perfect score." },
+    { id: MODE.SOLO,    label: "Solo",         desc: "Play alone. Close all tiles for a perfect score." },
     { id: MODE.LOWEST,  label: "Lowest Score", desc: "Each player gets their own board. Pass when ready. Fewest open tiles wins." },
     { id: MODE.SUDDEN,  label: "Sudden Death", desc: "Share one board. Player who gets stuck is eliminated." },
   ];
@@ -430,6 +453,79 @@ function SetupScreen({ onStart }) {
           </div>
         </div>
 
+        {/* Board Setup */}
+        <div style={{ marginBottom: 28 }}>
+          <div style={{ fontSize: 11, letterSpacing: 2, color: "#6aaa6a", textTransform: "uppercase", marginBottom: 10 }}>Board Setup</div>
+          <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+            {Object.entries(BOARD_PRESETS).map(([id, { label, desc }]) => (
+              <div
+                key={id}
+                onClick={() => setBoardPreset(id)}
+                style={{
+                  flex: 1, padding: "10px 8px", borderRadius: 8, cursor: "pointer",
+                  textAlign: "center",
+                  background: boardPreset === id ? "rgba(200,168,50,0.15)" : "rgba(255,255,255,0.03)",
+                  border: `2px solid ${boardPreset === id ? "#c8a832" : "rgba(255,255,255,0.08)"}`,
+                  transition: "all 0.15s",
+                }}
+              >
+                <div style={{ color: boardPreset === id ? "#e8d88a" : "#8aaa8a", fontWeight: "bold", fontSize: 13 }}>{label}</div>
+                <div style={{ color: "#4a6a4a", fontSize: 11, marginTop: 2 }}>{desc}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Custom tile picker */}
+          {boardPreset === "custom" && (
+            <div>
+              <div style={{ fontSize: 11, color: "#6a8a6a", marginBottom: 8 }}>
+                Tap to toggle tiles — minimum 6 required ({customTiles.length} selected)
+              </div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {Array.from({ length: 12 }, (_, i) => i + 1).map(n => {
+                  const on = customTiles.includes(n);
+                  return (
+                    <div
+                      key={n}
+                      onClick={() => toggleCustomTile(n)}
+                      style={{
+                        width: 40, height: 44, borderRadius: 6, cursor: "pointer",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        background: on ? "#fdf6e3" : "rgba(255,255,255,0.04)",
+                        border: `2px solid ${on ? "#8b6914" : "rgba(255,255,255,0.1)"}`,
+                        color: on ? "#2a1a00" : "#3a5a3a",
+                        fontFamily: "'Georgia', serif",
+                        fontWeight: "bold", fontSize: 16,
+                        opacity: !on && customTiles.length <= 6 ? 0.4 : 1,
+                        transition: "all 0.15s",
+                        boxShadow: on ? "0 2px 6px rgba(0,0,0,0.3)" : "none",
+                      }}
+                    >
+                      {n}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Preview of active tiles for non-custom */}
+          {boardPreset !== "custom" && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+              {BOARD_PRESETS[boardPreset].tiles.map(n => (
+                <div key={n} style={{
+                  width: 32, height: 36, borderRadius: 5,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  background: "#fdf6e3", border: "1.5px solid #8b6914",
+                  color: "#2a1a00", fontFamily: "'Georgia', serif",
+                  fontWeight: "bold", fontSize: 14,
+                  boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
+                }}>{n}</div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <Button onClick={handleStart} variant="gold">
           Start Game
         </Button>
@@ -461,13 +557,12 @@ export default function FlipTheBox() {
 // ─── Game Logic ──────────────────────────────────────────────────────────────
 
 function GameScreen({ config, onBackToSetup }) {
-  const { mode, players } = config;
+  const { mode, players, activeTiles } = config;
   const isSolo = mode === MODE.SOLO;
   const isLowest = mode === MODE.LOWEST || isSolo;
 
-  // In LOWEST: each player has their own board. In SUDDEN: one shared board.
-  const initPlayerBoards = () => players.map(() => initialTiles());
-  const initSharedBoard = () => initialTiles();
+  const initPlayerBoards = () => players.map(() => initialTiles(activeTiles));
+  const initSharedBoard = () => initialTiles(activeTiles);
 
   const [playerBoards, setPlayerBoards] = useState(initPlayerBoards); // lowest score only
   const [sharedBoard, setSharedBoard] = useState(initSharedBoard);    // sudden death only
@@ -912,8 +1007,8 @@ function GameScreen({ config, onBackToSetup }) {
           )}
           <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
             <Button onClick={() => {
-              setPlayerBoards(initPlayerBoards());
-              setSharedBoard(initSharedBoard());
+              setPlayerBoards(players.map(() => initialTiles(activeTiles)));
+              setSharedBoard(initialTiles(activeTiles));
               setCurrentPlayer(0);
               setEliminated([]);
               setPlayersDone([]);
@@ -1034,7 +1129,7 @@ function GameScreen({ config, onBackToSetup }) {
 
         {/* Tiles */}
         <div style={{ display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center", marginBottom: 16 }}>
-          {Array.from({ length: TOTAL_TILES }, (_, i) => i + 1).map(n => (
+          {activeTiles.map(n => (
             <Tile
               key={n}
               number={n}
