@@ -1048,13 +1048,32 @@ function GameScreen({ config, onBackToSetup }) {
       `}</style>
 
       {/* Header */}
-      <div style={{ textAlign: "center", marginBottom: 16 }}>
-        <h1 style={{
-          margin: 0, fontSize: 30, fontWeight: "bold", color: "#e8d88a",
-          textShadow: "0 2px 8px rgba(0,0,0,0.6)", letterSpacing: 1,
-        }}>Flip the Box</h1>
-        <div style={{ fontSize: 11, color: "#4a7a4a", letterSpacing: 2, textTransform: "uppercase", marginTop: 2 }}>
-          {isSolo ? "Solo" : isLowest ? "Lowest Score" : "Sudden Death"}
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "center",
+        marginBottom: 16, position: "relative", width: "100%", maxWidth: 560,
+      }}>
+        <button
+          onClick={onBackToSetup}
+          style={{
+            position: "absolute", left: 0,
+            background: "rgba(255,255,255,0.05)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: 8, padding: "6px 12px",
+            color: "#6aaa6a", fontFamily: "'Georgia', serif",
+            fontSize: 13, cursor: "pointer",
+            display: "flex", alignItems: "center", gap: 4,
+          }}
+        >
+          ← Menu
+        </button>
+        <div style={{ textAlign: "center" }}>
+          <h1 style={{
+            margin: 0, fontSize: 30, fontWeight: "bold", color: "#e8d88a",
+            textShadow: "0 2px 8px rgba(0,0,0,0.6)", letterSpacing: 1,
+          }}>Flip the Box</h1>
+          <div style={{ fontSize: 11, color: "#4a7a4a", letterSpacing: 2, textTransform: "uppercase", marginTop: 2 }}>
+            {isSolo ? "Solo" : isLowest ? "Lowest Score" : "Sudden Death"}
+          </div>
         </div>
       </div>
 
@@ -1373,7 +1392,6 @@ function GameScreen({ config, onBackToSetup }) {
               ➤ Pass to Next Player
             </Button>
           )}
-          <Button onClick={onBackToSetup} variant="primary">↩ Menu</Button>
         </div>
 
         <Log entries={log} />
