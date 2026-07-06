@@ -99,42 +99,41 @@ function EventDieFace({ face }) {
   );
 }
 
-function Tile({ number, state, onClick, selectable, selected }) {
+function Tile({ number, state, onClick, selectable, selected, theme }) {
+  const T = theme || THEMES.classic;
   const isClosed = state === "closed";
   const isCursed = state === "cursed";
-  const isOpen = state === "open";
 
-  let bg = "#fdf6e3";
-  let color = "#2a1a00";
-  let border = "2px solid #8b6914";
+  let bg = T.tileBg;
+  let color = T.tileText;
+  let border = `2px solid ${T.tileBorder}`;
   let opacity = 1;
   let cursor = selectable ? "pointer" : "default";
-  let boxShadow = "0 3px 6px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.5)";
+  let boxShadow = "0 3px 6px rgba(0,0,0,0.3), inset 0 1px 2px rgba(255,255,255,0.15)";
 
   if (isClosed) {
-    bg = "#3a5c3a";
-    color = "#3a5c3a";
-    border = "2px solid #2a4c2a";
+    bg = T.tileClosedBg;
+    color = T.tileClosedBg;
+    border = `2px solid ${T.tileClosedBg}`;
     boxShadow = "inset 0 2px 4px rgba(0,0,0,0.4)";
     opacity = 0.55;
   }
   if (isCursed) {
-    bg = "#4a1a1a";
-    color = "#c84040";
-    border = "2px solid #c84040";
-    boxShadow = "0 0 8px #c8404088, inset 0 2px 4px rgba(0,0,0,0.5)";
+    bg = "rgba(180,20,20,0.2)";
+    color = T.danger;
+    border = `2px solid ${T.danger}`;
+    boxShadow = `0 0 8px ${T.danger}88, inset 0 2px 4px rgba(0,0,0,0.5)`;
     opacity = 0.85;
   }
   if (selected) {
-    bg = "#f5c518";
-    color = "#1a0f00";
-    border = "2px solid #a07800";
-    boxShadow = "0 0 0 3px #f5c51888, 0 4px 12px rgba(245,197,24,0.5)";
+    bg = T.accent;
+    color = "#000";
+    border = `2px solid ${T.accent}`;
+    boxShadow = `0 0 0 3px ${T.accent}66, 0 4px 12px ${T.accent}88`;
     opacity = 1;
   }
   if (selectable && !isClosed && !isCursed && !selected) {
-    bg = "#fffbe8";
-    boxShadow = "0 3px 10px rgba(200,168,50,0.4), inset 0 1px 2px rgba(255,255,255,0.6)";
+    boxShadow = `0 3px 10px ${T.accent}44, inset 0 1px 2px rgba(255,255,255,0.2)`;
   }
 
   return (
@@ -143,24 +142,15 @@ function Tile({ number, state, onClick, selectable, selected }) {
       style={{
         width: 48, height: 56,
         display: "flex", alignItems: "center", justifyContent: "center",
-        background: bg,
-        border,
-        borderRadius: 8,
-        cursor,
-        boxShadow,
-        opacity,
-        transition: "all 0.2s",
-        position: "relative",
-        userSelect: "none",
+        background: bg, border, borderRadius: 8,
+        cursor, boxShadow, opacity,
+        transition: "all 0.2s", position: "relative", userSelect: "none",
       }}
     >
       {!isClosed && (
         <span style={{
-          fontFamily: "'Georgia', serif",
-          fontWeight: "bold",
-          fontSize: number >= 10 ? 16 : 20,
-          color,
-          lineHeight: 1,
+          fontFamily: "'Georgia', serif", fontWeight: "bold",
+          fontSize: number >= 10 ? 16 : 20, color, lineHeight: 1,
         }}>
           {number}
         </span>
@@ -300,12 +290,71 @@ const BOARD_PRESETS = {
   custom:  { label: "Custom",  desc: "Pick your own", tiles: null },
 };
 
+const THEMES = {
+  classic: {
+    label: "Classic",
+    desc: "Dark felt casino",
+    bgGradient: "radial-gradient(ellipse at 50% 30%, #1a3a1a 0%, #091a0d 60%, #060e08 100%)",
+    surface: "rgba(0,0,0,0.22)",
+    accent: "#f0c040",
+    accentDim: "rgba(240,192,64,0.15)",
+    accentBorder: "rgba(240,192,64,0.3)",
+    textDim: "#3a6a3a",
+    textMid: "#5a7a5a",
+    textBright: "#f0e8c0",
+    tileBg: "#fdf6e3",
+    tileText: "#2a1a00",
+    tileBorder: "#8b6914",
+    tileClosedBg: "#2a4a2a",
+    danger: "#e74c3c",
+    sectionLabel: "#5a7a5a",
+  },
+  bright: {
+    label: "Bright",
+    desc: "Navy to purple evening",
+    bgGradient: "radial-gradient(ellipse at 50% 30%, #2a3a6a 0%, #1a2a4a 60%, #2a1a3a 100%)",
+    surface: "rgba(255,255,255,0.07)",
+    accent: "#64b4ff",
+    accentDim: "rgba(100,180,255,0.15)",
+    accentBorder: "rgba(100,180,255,0.3)",
+    textDim: "#6090b0",
+    textMid: "#90b8d8",
+    textBright: "#e0f0ff",
+    tileBg: "#e8f0ff",
+    tileText: "#1a2a4a",
+    tileBorder: "#4a6aaa",
+    tileClosedBg: "#1a2a5a",
+    danger: "#ff5577",
+    sectionLabel: "#90b8d8",
+  },
+  neon: {
+    label: "Neon",
+    desc: "Electric glow",
+    bgGradient: "radial-gradient(ellipse at 50% 30%, #1a0030 0%, #0a0015 60%, #000510 100%)",
+    surface: "rgba(255,255,255,0.03)",
+    accent: "#00ffcc",
+    accentDim: "rgba(0,255,204,0.12)",
+    accentBorder: "rgba(0,255,204,0.35)",
+    textDim: "#440066",
+    textMid: "#882299",
+    textBright: "#ff00aa",
+    tileBg: "#0d0020",
+    tileText: "#00ffcc",
+    tileBorder: "#440066",
+    tileClosedBg: "#050010",
+    danger: "#ff0066",
+    sectionLabel: "#882299",
+  },
+};
+
 function SetupScreen({ onStart }) {
   const [mode, setMode] = useState(MODE.SOLO);
   const [numPlayers, setNumPlayers] = useState(2);
   const [names, setNames] = useState(["", "", "", ""]);
   const [boardPreset, setBoardPreset] = useState("full");
   const [customTiles, setCustomTiles] = useState([1,2,3,4,5,6,7,8,9,10,11,12]);
+  const [themeKey, setThemeKey] = useState("classic");
+  const T = THEMES[themeKey];
 
   const maxPlayers = mode === MODE.SUDDEN ? 2 : mode === MODE.SOLO ? 1 : 4;
   const minPlayers = mode === MODE.SOLO ? 1 : 2;
@@ -333,7 +382,7 @@ function SetupScreen({ onStart }) {
     const playerNames = Array.from({ length: actualNum }, (_, i) =>
       names[i].trim() || (mode === MODE.SOLO ? "You" : `Player ${i + 1}`)
     );
-    onStart({ mode, players: playerNames, activeTiles });
+    onStart({ mode, players: playerNames, activeTiles, themeKey });
   }
 
   const MODES = [
@@ -345,32 +394,62 @@ function SetupScreen({ onStart }) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "radial-gradient(ellipse at 50% 30%, #1e4a1e 0%, #0d2a0d 60%, #071507 100%)",
+      background: T.bgGradient,
       display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "center", padding: "24px 16px",
       fontFamily: "'Georgia', serif",
     }}>
-      <div style={{ textAlign: "center", marginBottom: 32 }}>
-        <div style={{ fontSize: 11, letterSpacing: 4, color: "#6aaa6a", textTransform: "uppercase", marginBottom: 6 }}>
+      <div style={{ textAlign: "center", marginBottom: 28 }}>
+        <div style={{ fontSize: 11, letterSpacing: 4, color: T.textMid, textTransform: "uppercase", marginBottom: 6 }}>
           Dice Game
         </div>
         <h1 style={{
-          margin: 0, fontSize: 38, fontWeight: "bold", color: "#e8d88a",
+          margin: 0, fontSize: 38, fontWeight: "bold", color: T.textBright,
           textShadow: "0 2px 8px rgba(0,0,0,0.6)",
         }}>Flip the Box</h1>
-        <div style={{ width: 80, height: 2, background: "linear-gradient(90deg, transparent, #c8a832, transparent)", margin: "10px auto 0" }} />
+        <div style={{ width: 80, height: 2, background: `linear-gradient(90deg, transparent, ${T.accent}, transparent)`, margin: "10px auto 0" }} />
       </div>
 
       <div style={{
         width: "100%", maxWidth: 420,
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(200,168,50,0.2)",
-        borderRadius: 16, padding: "24px 24px 28px",
+        background: T.surface,
+        border: `1px solid ${T.accentBorder}`,
+        borderRadius: 16, padding: "20px 20px 24px",
         boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
       }}>
-        {/* Mode */}
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: 11, letterSpacing: 2, color: "#6aaa6a", textTransform: "uppercase", marginBottom: 10 }}>Game Mode</div>
+
+        {/* Theme picker */}
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ fontSize: 11, letterSpacing: 2, color: T.sectionLabel, textTransform: "uppercase", marginBottom: 10 }}>Theme</div>
+          <div style={{ display: "flex", gap: 8 }}>
+            {Object.entries(THEMES).map(([id, th]) => (
+              <div
+                key={id}
+                onClick={() => setThemeKey(id)}
+                style={{
+                  flex: 1, padding: "10px 8px", borderRadius: 10, cursor: "pointer",
+                  textAlign: "center",
+                  background: themeKey === id ? th.accentDim : "rgba(255,255,255,0.03)",
+                  border: `2px solid ${themeKey === id ? th.accent : "rgba(255,255,255,0.08)"}`,
+                  transition: "all 0.15s",
+                  boxShadow: themeKey === id ? `0 0 10px ${th.accent}44` : "none",
+                }}
+              >
+                <div style={{
+                  width: 20, height: 20, borderRadius: 5,
+                  background: th.bgGradient, border: `2px solid ${th.accent}`,
+                  margin: "0 auto 5px", boxShadow: `0 0 6px ${th.accent}66`,
+                }} />
+                <div style={{ color: themeKey === id ? th.accent : T.textMid, fontWeight: "bold", fontSize: 12 }}>{th.label}</div>
+                <div style={{ color: T.textDim, fontSize: 10, marginTop: 1 }}>{th.desc}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Game Mode */}
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ fontSize: 11, letterSpacing: 2, color: T.sectionLabel, textTransform: "uppercase", marginBottom: 10 }}>Game Mode</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
             {MODES.map(({ id, label, desc }) => (
               <div
@@ -378,31 +457,31 @@ function SetupScreen({ onStart }) {
                 onClick={() => { setMode(id); if (id === MODE.SUDDEN) setNumPlayers(2); if (id === MODE.SOLO) setNumPlayers(1); }}
                 style={{
                   padding: "12px 14px", borderRadius: 10, cursor: "pointer",
-                  background: mode === id ? "rgba(200,168,50,0.15)" : "rgba(255,255,255,0.03)",
-                  border: `2px solid ${mode === id ? "#c8a832" : "rgba(255,255,255,0.08)"}`,
+                  background: mode === id ? T.accentDim : "rgba(255,255,255,0.03)",
+                  border: `2px solid ${mode === id ? T.accent : "rgba(255,255,255,0.08)"}`,
                   transition: "all 0.15s",
                   display: "flex", alignItems: "flex-start", gap: 10,
                 }}
               >
                 <div style={{
                   width: 16, height: 16, borderRadius: "50%", flexShrink: 0, marginTop: 2,
-                  border: `2px solid ${mode === id ? "#c8a832" : "#3a5a3a"}`,
-                  background: mode === id ? "#c8a832" : "transparent",
+                  border: `2px solid ${mode === id ? T.accent : T.textDim}`,
+                  background: mode === id ? T.accent : "transparent",
                   transition: "all 0.15s",
                 }} />
                 <div>
-                  <div style={{ color: mode === id ? "#e8d88a" : "#8aaa8a", fontWeight: "bold", fontSize: 14, marginBottom: 2 }}>{label}</div>
-                  <div style={{ color: "#4a6a4a", fontSize: 12, lineHeight: 1.4 }}>{desc}</div>
+                  <div style={{ color: mode === id ? T.textBright : T.textMid, fontWeight: "bold", fontSize: 14, marginBottom: 2 }}>{label}</div>
+                  <div style={{ color: T.textDim, fontSize: 12, lineHeight: 1.4 }}>{desc}</div>
                 </div>
               </div>
             ))}
           </div>
         </div>
 
-        {/* Number of players — hidden for solo */}
+        {/* Number of players */}
         {mode !== MODE.SOLO && (
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontSize: 11, letterSpacing: 2, color: "#6aaa6a", textTransform: "uppercase", marginBottom: 10 }}>
+          <div style={{ marginBottom: 22 }}>
+            <div style={{ fontSize: 11, letterSpacing: 2, color: T.sectionLabel, textTransform: "uppercase", marginBottom: 10 }}>
               Players {mode === MODE.SUDDEN ? "(2)" : "(2–4)"}
             </div>
             <div style={{ display: "flex", gap: 8 }}>
@@ -413,9 +492,9 @@ function SetupScreen({ onStart }) {
                   style={{
                     width: 44, height: 44, borderRadius: 8, cursor: mode === MODE.SUDDEN ? "default" : "pointer",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    background: actualNum === n ? "rgba(200,168,50,0.2)" : "rgba(255,255,255,0.04)",
-                    border: `2px solid ${actualNum === n ? "#c8a832" : "rgba(255,255,255,0.1)"}`,
-                    color: actualNum === n ? "#e8d88a" : "#6a8a6a",
+                    background: actualNum === n ? T.accentDim : "rgba(255,255,255,0.04)",
+                    border: `2px solid ${actualNum === n ? T.accent : "rgba(255,255,255,0.1)"}`,
+                    color: actualNum === n ? T.textBright : T.textMid,
                     fontWeight: "bold", fontSize: 18,
                     transition: "all 0.15s",
                   }}
@@ -428,8 +507,8 @@ function SetupScreen({ onStart }) {
         )}
 
         {/* Names */}
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 11, letterSpacing: 2, color: "#6aaa6a", textTransform: "uppercase", marginBottom: 10 }}>
+        <div style={{ marginBottom: 22 }}>
+          <div style={{ fontSize: 11, letterSpacing: 2, color: T.sectionLabel, textTransform: "uppercase", marginBottom: 10 }}>
             {mode === MODE.SOLO ? "Your Name" : "Player Names"}
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
@@ -443,8 +522,8 @@ function SetupScreen({ onStart }) {
                 maxLength={16}
                 style={{
                   padding: "10px 14px",
-                  background: "#1a2e1a", border: "1px solid #3a5a3a",
-                  borderRadius: 8, color: "#e8f4e8",
+                  background: "rgba(0,0,0,0.3)", border: `1px solid ${T.textDim}`,
+                  borderRadius: 8, color: T.textBright,
                   fontFamily: "'Georgia', serif", fontSize: 15,
                   outline: "none", width: "100%", boxSizing: "border-box",
                 }}
@@ -454,8 +533,8 @@ function SetupScreen({ onStart }) {
         </div>
 
         {/* Board Setup */}
-        <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 11, letterSpacing: 2, color: "#6aaa6a", textTransform: "uppercase", marginBottom: 10 }}>Board Setup</div>
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: 11, letterSpacing: 2, color: T.sectionLabel, textTransform: "uppercase", marginBottom: 10 }}>Board Setup</div>
           <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
             {Object.entries(BOARD_PRESETS).map(([id, { label, desc }]) => (
               <div
@@ -464,22 +543,21 @@ function SetupScreen({ onStart }) {
                 style={{
                   flex: 1, padding: "10px 8px", borderRadius: 8, cursor: "pointer",
                   textAlign: "center",
-                  background: boardPreset === id ? "rgba(200,168,50,0.15)" : "rgba(255,255,255,0.03)",
-                  border: `2px solid ${boardPreset === id ? "#c8a832" : "rgba(255,255,255,0.08)"}`,
+                  background: boardPreset === id ? T.accentDim : "rgba(255,255,255,0.03)",
+                  border: `2px solid ${boardPreset === id ? T.accent : "rgba(255,255,255,0.08)"}`,
                   transition: "all 0.15s",
                 }}
               >
-                <div style={{ color: boardPreset === id ? "#e8d88a" : "#8aaa8a", fontWeight: "bold", fontSize: 13 }}>{label}</div>
-                <div style={{ color: "#4a6a4a", fontSize: 11, marginTop: 2 }}>{desc}</div>
+                <div style={{ color: boardPreset === id ? T.textBright : T.textMid, fontWeight: "bold", fontSize: 13 }}>{label}</div>
+                <div style={{ color: T.textDim, fontSize: 11, marginTop: 2 }}>{desc}</div>
               </div>
             ))}
           </div>
 
-          {/* Custom tile picker */}
           {boardPreset === "custom" && (
             <div>
-              <div style={{ fontSize: 11, color: "#6a8a6a", marginBottom: 8 }}>
-                Tap to toggle tiles — minimum 6 required ({customTiles.length} selected)
+              <div style={{ fontSize: 11, color: T.textMid, marginBottom: 8 }}>
+                Tap to toggle — minimum 6 ({customTiles.length} selected)
               </div>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
                 {Array.from({ length: 12 }, (_, i) => i + 1).map(n => {
@@ -491,11 +569,10 @@ function SetupScreen({ onStart }) {
                       style={{
                         width: 40, height: 44, borderRadius: 6, cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        background: on ? "#fdf6e3" : "rgba(255,255,255,0.04)",
-                        border: `2px solid ${on ? "#8b6914" : "rgba(255,255,255,0.1)"}`,
-                        color: on ? "#2a1a00" : "#3a5a3a",
-                        fontFamily: "'Georgia', serif",
-                        fontWeight: "bold", fontSize: 16,
+                        background: on ? T.tileBg : "rgba(255,255,255,0.04)",
+                        border: `2px solid ${on ? T.tileBorder : "rgba(255,255,255,0.1)"}`,
+                        color: on ? T.tileText : T.textDim,
+                        fontFamily: "'Georgia', serif", fontWeight: "bold", fontSize: 16,
                         opacity: !on && customTiles.length <= 6 ? 0.4 : 1,
                         transition: "all 0.15s",
                         boxShadow: on ? "0 2px 6px rgba(0,0,0,0.3)" : "none",
@@ -509,15 +586,14 @@ function SetupScreen({ onStart }) {
             </div>
           )}
 
-          {/* Preview of active tiles for non-custom */}
           {boardPreset !== "custom" && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
               {BOARD_PRESETS[boardPreset].tiles.map(n => (
                 <div key={n} style={{
                   width: 32, height: 36, borderRadius: 5,
                   display: "flex", alignItems: "center", justifyContent: "center",
-                  background: "#fdf6e3", border: "1.5px solid #8b6914",
-                  color: "#2a1a00", fontFamily: "'Georgia', serif",
+                  background: T.tileBg, border: `1.5px solid ${T.tileBorder}`,
+                  color: T.tileText, fontFamily: "'Georgia', serif",
                   fontWeight: "bold", fontSize: 14,
                   boxShadow: "0 1px 4px rgba(0,0,0,0.25)",
                 }}>{n}</div>
@@ -526,9 +602,21 @@ function SetupScreen({ onStart }) {
           )}
         </div>
 
-        <Button onClick={handleStart} variant="gold">
+        {/* Start button */}
+        <button
+          onClick={handleStart}
+          style={{
+            width: "100%", padding: "12px 20px",
+            background: `linear-gradient(180deg, ${T.accent} 0%, ${T.accent}bb 100%)`,
+            color: themeKey === "neon" ? "#000" : "#1a0f00",
+            border: "none", borderRadius: 8,
+            fontFamily: "'Georgia', serif", fontWeight: "bold", fontSize: 16,
+            cursor: "pointer", letterSpacing: 0.5,
+            boxShadow: `0 4px 16px ${T.accent}55`,
+          }}
+        >
           Start Game
-        </Button>
+        </button>
       </div>
     </div>
   );
@@ -557,7 +645,8 @@ export default function FlipTheBox() {
 // ─── Game Logic ──────────────────────────────────────────────────────────────
 
 function GameScreen({ config, onBackToSetup }) {
-  const { mode, players, activeTiles } = config;
+  const { mode, players, activeTiles, themeKey } = config;
+  const T = THEMES[themeKey] || THEMES.classic;
   const isSolo = mode === MODE.SOLO;
   const isLowest = mode === MODE.LOWEST || isSolo;
 
@@ -901,34 +990,35 @@ function GameScreen({ config, onBackToSetup }) {
     return (
       <div style={{
         minHeight: "100vh",
-        background: "radial-gradient(ellipse at 50% 30%, #1e4a1e 0%, #0d2a0d 60%, #071507 100%)",
+        background: T.bgGradient,
         display: "flex", flexDirection: "column", alignItems: "center",
         justifyContent: "center", padding: 24, fontFamily: "'Georgia', serif",
       }}>
         <div style={{
-          background: "rgba(255,255,255,0.04)", border: "1px solid rgba(200,168,50,0.2)",
+          background: T.surface, border: `1px solid ${T.accentBorder}`,
           borderRadius: 16, padding: "32px 40px", textAlign: "center",
           boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 340,
         }}>
-          <div style={{ fontSize: 13, color: "#6aaa6a", marginBottom: 8, letterSpacing: 1 }}>
+          <div style={{ fontSize: 13, color: T.textMid, marginBottom: 8, letterSpacing: 1 }}>
             Next up
           </div>
-          <div style={{ fontSize: 28, color: "#e8d88a", fontWeight: "bold", marginBottom: 8 }}>
+          <div style={{ fontSize: 28, color: T.textBright, fontWeight: "bold", marginBottom: 8 }}>
             {players[currentPlayer]}
           </div>
-          {isLowest && (
-            <div style={{ fontSize: 13, color: "#6a8a6a", marginBottom: 20 }}>
-              Hand the device over, then tap Ready.
-            </div>
-          )}
-          {!isLowest && (
-            <div style={{ fontSize: 13, color: "#6a8a6a", marginBottom: 20 }}>
-              Pass the device, then tap Ready.
-            </div>
-          )}
-          <Button onClick={() => setPassConfirm(false)} variant="gold">
+          <div style={{ fontSize: 13, color: T.textMid, marginBottom: 20 }}>
+            {isLowest ? "Hand the device over, then tap Ready." : "Pass the device, then tap Ready."}
+          </div>
+          <button
+            onClick={() => setPassConfirm(false)}
+            style={{
+              padding: "10px 28px", borderRadius: 8, cursor: "pointer",
+              background: T.accent, color: "#000", border: "none",
+              fontFamily: "'Georgia', serif", fontWeight: "bold", fontSize: 15,
+              boxShadow: `0 4px 12px ${T.accent}55`,
+            }}
+          >
             Ready — Let's Go
-          </Button>
+          </button>
         </div>
       </div>
     );
@@ -939,32 +1029,32 @@ function GameScreen({ config, onBackToSetup }) {
     return (
       <div style={{
         minHeight: "100vh",
-        background: "radial-gradient(ellipse at 50% 30%, #1e4a1e 0%, #0d2a0d 60%, #071507 100%)",
+        background: T.bgGradient,
         display: "flex", flexDirection: "column", alignItems: "center",
         justifyContent: "center", padding: 24, fontFamily: "'Georgia', serif",
       }}>
         <div style={{
-          background: "rgba(255,255,255,0.04)", border: "1px solid rgba(200,168,50,0.2)",
+          background: T.surface, border: `1px solid ${T.accentBorder}`,
           borderRadius: 16, padding: "32px 28px", textAlign: "center",
           boxShadow: "0 8px 32px rgba(0,0,0,0.5)", maxWidth: 400, width: "100%",
         }}>
           {gameOverData.mode === MODE.SOLO ? (
             <>
               <div style={{ fontSize: 36, marginBottom: 8 }}>{gameOverData.perfect ? "🎉" : "🎲"}</div>
-              <div style={{ color: gameOverData.perfect ? "#e8d88a" : "#a8c8a8", fontSize: 22, fontWeight: "bold", marginBottom: 4 }}>
+              <div style={{ color: gameOverData.perfect ? T.accent : T.textMid, fontSize: 22, fontWeight: "bold", marginBottom: 4 }}>
                 {gameOverData.perfect ? "Perfect Game!" : "Game Over"}
               </div>
               {!gameOverData.perfect && (
                 <>
-                  <div style={{ color: "#6a8a6a", fontSize: 13, marginBottom: 4 }}>Final Score</div>
-                  <div style={{ color: "#e8d88a", fontSize: 48, fontWeight: "bold", lineHeight: 1, marginBottom: 4 }}>
+                  <div style={{ color: T.textMid, fontSize: 13, marginBottom: 4 }}>Final Score</div>
+                  <div style={{ color: T.accent, fontSize: 48, fontWeight: "bold", lineHeight: 1, marginBottom: 4 }}>
                     {gameOverData.score}
                   </div>
-                  <div style={{ color: "#4a7a4a", fontSize: 12, marginBottom: 16 }}>lower is better</div>
+                  <div style={{ color: T.textDim, fontSize: 12, marginBottom: 16 }}>lower is better</div>
                 </>
               )}
               {gameOverData.perfect && (
-                <div style={{ color: "#6aaa6a", fontSize: 14, marginBottom: 16 }}>All 12 tiles closed!</div>
+                <div style={{ color: T.textMid, fontSize: 14, marginBottom: 16 }}>All tiles closed!</div>
               )}
             </>
           ) : gameOverData.mode === MODE.SUDDEN ? (
@@ -972,17 +1062,17 @@ function GameScreen({ config, onBackToSetup }) {
               <div style={{ fontSize: 36, marginBottom: 8 }}>
                 {gameOverData.perfect ? "🎉" : "👑"}
               </div>
-              <div style={{ color: "#e8d88a", fontSize: 26, fontWeight: "bold", marginBottom: 4 }}>
+              <div style={{ color: T.accent, fontSize: 26, fontWeight: "bold", marginBottom: 4 }}>
                 {gameOverData.winner ? `${gameOverData.winner} wins!` : "Draw!"}
               </div>
               {gameOverData.perfect && (
-                <div style={{ color: "#6aaa6a", fontSize: 14, marginBottom: 16 }}>Perfect clear!</div>
+                <div style={{ color: T.textMid, fontSize: 14, marginBottom: 16 }}>Perfect clear!</div>
               )}
             </>
           ) : (
             <>
               <div style={{ fontSize: 36, marginBottom: 8 }}>🏆</div>
-              <div style={{ color: "#e8d88a", fontSize: 22, fontWeight: "bold", marginBottom: 16 }}>
+              <div style={{ color: T.accent, fontSize: 22, fontWeight: "bold", marginBottom: 16 }}>
                 {gameOverData.winners.length === 1
                   ? `${gameOverData.winners[0]} wins!`
                   : `Tie: ${gameOverData.winners.join(" & ")}!`}
@@ -995,32 +1085,48 @@ function GameScreen({ config, onBackToSetup }) {
                       display: "flex", justifyContent: "space-between", alignItems: "center",
                       padding: "8px 12px", marginBottom: 6,
                       background: s.score === gameOverData.scores.reduce((m, x) => Math.min(m, x.score), Infinity)
-                        ? "rgba(200,168,50,0.15)" : "rgba(255,255,255,0.03)",
-                      borderRadius: 8, border: "1px solid rgba(255,255,255,0.06)",
+                        ? T.accentDim : "rgba(255,255,255,0.03)",
+                      borderRadius: 8, border: `1px solid ${T.accentBorder}`,
                     }}>
-                      <span style={{ color: "#c8d890", fontSize: 15 }}>{s.name}</span>
-                      <span style={{ color: "#e8d88a", fontWeight: "bold", fontSize: 18 }}>{s.score}</span>
+                      <span style={{ color: T.textMid, fontSize: 15 }}>{s.name}</span>
+                      <span style={{ color: T.accent, fontWeight: "bold", fontSize: 18 }}>{s.score}</span>
                     </div>
                   ))}
               </div>
             </>
           )}
           <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
-            <Button onClick={() => {
-              setPlayerBoards(players.map(() => initialTiles(activeTiles)));
-              setSharedBoard(initialTiles(activeTiles));
-              setCurrentPlayer(0);
-              setEliminated([]);
-              setPlayersDone([]);
-              setPhase(PHASE.IDLE);
-              resetTurnState();
-              setLog([]);
-              setGameOver(false);
-              setGameOverData(null);
-              setHasRolledOnce(false);
-              if (!isSolo) setPassConfirm(true);
-            }} variant="gold">Play Again</Button>
-            <Button onClick={onBackToSetup} variant="primary">Change Setup</Button>
+            <button
+              onClick={() => {
+                setPlayerBoards(players.map(() => initialTiles(activeTiles)));
+                setSharedBoard(initialTiles(activeTiles));
+                setCurrentPlayer(0);
+                setEliminated([]);
+                setPlayersDone([]);
+                setPhase(PHASE.IDLE);
+                resetTurnState();
+                setLog([]);
+                setGameOver(false);
+                setGameOverData(null);
+                setHasRolledOnce(false);
+                if (!isSolo) setPassConfirm(true);
+              }}
+              style={{
+                padding: "10px 20px", borderRadius: 8, cursor: "pointer",
+                background: T.accent, color: "#000", border: "none",
+                fontFamily: "'Georgia', serif", fontWeight: "bold", fontSize: 14,
+                boxShadow: `0 4px 12px ${T.accent}55`,
+              }}
+            >Play Again</button>
+            <button
+              onClick={onBackToSetup}
+              style={{
+                padding: "10px 20px", borderRadius: 8, cursor: "pointer",
+                background: "rgba(255,255,255,0.06)", color: T.textMid,
+                border: `1px solid ${T.textDim}`,
+                fontFamily: "'Georgia', serif", fontWeight: "bold", fontSize: 14,
+              }}
+            >Change Setup</button>
           </div>
         </div>
       </div>
@@ -1031,7 +1137,7 @@ function GameScreen({ config, onBackToSetup }) {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "radial-gradient(ellipse at 50% 30%, #1e4a1e 0%, #0d2a0d 60%, #071507 100%)",
+      background: T.bgGradient,
       display: "flex", flexDirection: "column", alignItems: "center",
       justifyContent: "flex-start", padding: "20px 16px 40px",
       fontFamily: "'Georgia', serif",
@@ -1043,8 +1149,8 @@ function GameScreen({ config, onBackToSetup }) {
           100% { transform: rotate(360deg) scale(1); }
         }
         ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #1a2e1a; }
-        ::-webkit-scrollbar-thumb { background: #3a6a3a; border-radius: 3px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+        ::-webkit-scrollbar-thumb { background: ${T.textDim}; border-radius: 3px; }
       `}</style>
 
       {/* Header */}
@@ -1057,9 +1163,9 @@ function GameScreen({ config, onBackToSetup }) {
           style={{
             position: "absolute", left: 0,
             background: "rgba(255,255,255,0.05)",
-            border: "1px solid rgba(255,255,255,0.12)",
+            border: `1px solid ${T.textDim}`,
             borderRadius: 8, padding: "6px 12px",
-            color: "#6aaa6a", fontFamily: "'Georgia', serif",
+            color: T.textMid, fontFamily: "'Georgia', serif",
             fontSize: 13, cursor: "pointer",
             display: "flex", alignItems: "center", gap: 4,
           }}
@@ -1068,10 +1174,10 @@ function GameScreen({ config, onBackToSetup }) {
         </button>
         <div style={{ textAlign: "center" }}>
           <h1 style={{
-            margin: 0, fontSize: 30, fontWeight: "bold", color: "#e8d88a",
+            margin: 0, fontSize: 30, fontWeight: "bold", color: T.textBright,
             textShadow: "0 2px 8px rgba(0,0,0,0.6)", letterSpacing: 1,
           }}>Flip the Box</h1>
-          <div style={{ fontSize: 11, color: "#4a7a4a", letterSpacing: 2, textTransform: "uppercase", marginTop: 2 }}>
+          <div style={{ fontSize: 11, color: T.textDim, letterSpacing: 2, textTransform: "uppercase", marginTop: 2 }}>
             {isSolo ? "Solo" : isLowest ? "Lowest Score" : "Sudden Death"}
           </div>
         </div>
@@ -1083,9 +1189,9 @@ function GameScreen({ config, onBackToSetup }) {
           {players.map((name, i) => (
             <div key={i} style={{
               padding: "5px 14px", borderRadius: 20, fontSize: 12,
-              background: i === currentPlayer ? "rgba(200,168,50,0.2)" : "rgba(255,255,255,0.03)",
-              border: `1.5px solid ${i === currentPlayer ? "#c8a832" : "rgba(255,255,255,0.08)"}`,
-              color: playersDone.includes(i) ? "#3a5a3a" : i === currentPlayer ? "#e8d88a" : "#6a8a6a",
+              background: i === currentPlayer ? T.accentDim : "rgba(255,255,255,0.03)",
+              border: `1.5px solid ${i === currentPlayer ? T.accent : "rgba(255,255,255,0.08)"}`,
+              color: playersDone.includes(i) ? T.textDim : i === currentPlayer ? T.textBright : T.textMid,
               fontWeight: i === currentPlayer ? "bold" : "normal",
               textDecoration: playersDone.includes(i) ? "line-through" : "none",
             }}>
@@ -1097,15 +1203,13 @@ function GameScreen({ config, onBackToSetup }) {
 
       {/* Sudden death player indicator */}
       {!isLowest && (
-        <div style={{
-          display: "flex", gap: 8, marginBottom: 14, justifyContent: "center",
-        }}>
+        <div style={{ display: "flex", gap: 8, marginBottom: 14, justifyContent: "center" }}>
           {players.map((name, i) => (
             <div key={i} style={{
               padding: "5px 14px", borderRadius: 20, fontSize: 12,
-              background: i === currentPlayer ? "rgba(200,168,50,0.2)" : "rgba(255,255,255,0.03)",
-              border: `1.5px solid ${eliminated.includes(i) ? "#c84040" : i === currentPlayer ? "#c8a832" : "rgba(255,255,255,0.08)"}`,
-              color: eliminated.includes(i) ? "#c84040" : i === currentPlayer ? "#e8d88a" : "#6a8a6a",
+              background: i === currentPlayer ? T.accentDim : "rgba(255,255,255,0.03)",
+              border: `1.5px solid ${eliminated.includes(i) ? T.danger : i === currentPlayer ? T.accent : "rgba(255,255,255,0.08)"}`,
+              color: eliminated.includes(i) ? T.danger : i === currentPlayer ? T.textBright : T.textMid,
               fontWeight: i === currentPlayer ? "bold" : "normal",
               textDecoration: eliminated.includes(i) ? "line-through" : "none",
             }}>
@@ -1118,8 +1222,8 @@ function GameScreen({ config, onBackToSetup }) {
       {/* Main game area */}
       <div style={{
         width: "100%", maxWidth: 560,
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(200,168,50,0.2)",
+        background: T.surface,
+        border: `1px solid ${T.accentBorder}`,
         borderRadius: 16, padding: "16px 16px 20px",
         boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
       }}>
@@ -1127,7 +1231,7 @@ function GameScreen({ config, onBackToSetup }) {
         {!isSolo && (
           <div style={{
             textAlign: "center", marginBottom: 12,
-            fontSize: 16, color: "#e8d88a", fontWeight: "bold",
+            fontSize: 16, color: T.textBright, fontWeight: "bold",
           }}>
             {players[currentPlayer]}'s turn
           </div>
@@ -1136,13 +1240,13 @@ function GameScreen({ config, onBackToSetup }) {
         {/* Stats */}
         <div style={{
           display: "flex", justifyContent: "space-between", marginBottom: 14,
-          fontSize: 12, color: "#6aaa6a", letterSpacing: 1, textTransform: "uppercase",
+          fontSize: 12, color: T.textMid, letterSpacing: 1, textTransform: "uppercase",
         }}>
-          <span>Open: <b style={{ color: "#c8d890" }}>{openCount}</b></span>
-          <span>Closed: <b style={{ color: "#6aaa6a" }}>{closedCount}</b></span>
-          {cursedCount > 0 && <span>Cursed: <b style={{ color: "#c84040" }}>{cursedCount}</b></span>}
+          <span>Open: <b style={{ color: T.textBright }}>{openCount}</b></span>
+          <span>Closed: <b style={{ color: T.textMid }}>{closedCount}</b></span>
+          {cursedCount > 0 && <span>Cursed: <b style={{ color: T.danger }}>{cursedCount}</b></span>}
           {total > 0 && phase !== PHASE.IDLE && (
-            <span>Target: <b style={{ color: "#e8d88a" }}>{total}</b></span>
+            <span>Target: <b style={{ color: T.accent }}>{total}</b></span>
           )}
         </div>
 
@@ -1156,6 +1260,7 @@ function GameScreen({ config, onBackToSetup }) {
               onClick={handleTileClick}
               selectable={tileClickable(n)}
               selected={tileIsSelected(n)}
+              theme={T}
             />
           ))}
         </div>
@@ -1167,9 +1272,9 @@ function GameScreen({ config, onBackToSetup }) {
             gap: 16, marginBottom: 14,
           }}>
             <Die value={effectiveDice[0]} rolling={rolling} />
-            <span style={{ color: "#6aaa6a", fontSize: 22 }}>+</span>
+            <span style={{ color: T.textMid, fontSize: 22 }}>+</span>
             <Die value={effectiveDice[1]} rolling={rolling} />
-            <span style={{ color: "#c8a832", fontSize: 22, fontWeight: "bold" }}>= {total}</span>
+            <span style={{ color: T.accent, fontSize: 22, fontWeight: "bold" }}>= {total}</span>
             {eventFace && <EventDieFace face={eventFace} />}
           </div>
         )}
@@ -1177,13 +1282,13 @@ function GameScreen({ config, onBackToSetup }) {
         {/* Instructions */}
         <div style={{
           textAlign: "center", marginBottom: 12, minHeight: 36,
-          color: "#a8c8a8", fontSize: 13, lineHeight: 1.5,
+          color: T.textMid, fontSize: 13, lineHeight: 1.5,
         }}>
           {phase === PHASE.IDLE && "Roll the dice to begin your turn."}
           {phase === PHASE.ROLLED && !pendingEffect && !isStuck && `Select tiles that sum to ${total}, then confirm.`}
-          {phase === PHASE.ROLLED && !pendingEffect && isStuck && <span style={{ color: "#e8a070" }}>No valid combinations for {total}. Try an event die or give up.</span>}
+          {phase === PHASE.ROLLED && !pendingEffect && isStuck && <span style={{ color: T.danger }}>No valid combinations for {total}. Try an event die or give up.</span>}
           {phase === PHASE.FLIP_PICK && "Select any tile to flip its state, then confirm."}
-          {phase === PHASE.BUST_PICK && <span style={{ color: "#e87070" }}>💀 Bust! Select a tile to curse, then confirm.</span>}
+          {phase === PHASE.BUST_PICK && <span style={{ color: T.danger }}>💀 Bust! Select a tile to curse, then confirm.</span>}
           {phase === PHASE.EVENT_ROLLED && pendingEffect?.type === "+1" && "Pick which die to add +1 to:"}
           {phase === PHASE.EVENT_ROLLED && pendingEffect?.type === "+2" && "Pick which die to add +2 to:"}
           {phase === PHASE.EVENT_ROLLED && pendingEffect?.type === "wild" && "Enter a value (1–6) for your Wild:"}
@@ -1399,10 +1504,10 @@ function GameScreen({ config, onBackToSetup }) {
         {/* Legend */}
         <div style={{
           marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8, justifyContent: "center",
-          fontSize: 11, color: "#4a7a4a",
+          fontSize: 11, color: T.textDim,
         }}>
-          <span>🟡 selectable</span>
-          <span>🟫 closed</span>
+          <span>● selectable</span>
+          <span>■ closed</span>
           <span>💀 cursed</span>
         </div>
       </div>
@@ -1410,20 +1515,19 @@ function GameScreen({ config, onBackToSetup }) {
       {/* Dice reference */}
       <div style={{ marginTop: 16, width: "100%", maxWidth: 560, display: "flex", gap: 10 }}>
         {[
-          { name: "Safe Die", faces: SAFE_DIE_FACES, color: "#3a6a3a" },
-          { name: "Risk Die", faces: RISK_DIE_FACES, color: "#6a2a2a" },
-        ].map(({ name, faces, color }) => (
+          { name: "Safe Die", faces: SAFE_DIE_FACES, labelColor: T.textMid },
+          { name: "Risk Die", faces: RISK_DIE_FACES, labelColor: T.danger },
+        ].map(({ name, faces, labelColor }) => (
           <div key={name} style={{
-            flex: 1, background: "rgba(0,0,0,0.25)",
-            border: `1px solid ${color}55`, borderRadius: 10, padding: "10px 12px",
+            flex: 1, background: T.surface,
+            border: `1px solid ${T.accentBorder}`, borderRadius: 10, padding: "10px 12px",
           }}>
             <div style={{
-              fontSize: 11, letterSpacing: 2,
-              color: color === "#3a6a3a" ? "#6aaa6a" : "#c87070",
+              fontSize: 11, letterSpacing: 2, color: labelColor,
               textTransform: "uppercase", marginBottom: 6, fontWeight: "bold",
             }}>{name}</div>
             {faces.map((f, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3, fontSize: 12, color: "#6a8a6a" }}>
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3, fontSize: 12, color: T.textMid }}>
                 <span style={{
                   width: 14, height: 14, borderRadius: 3,
                   background: FACE_COLORS[f] + "55", border: `1px solid ${FACE_COLORS[f]}88`,
