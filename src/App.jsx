@@ -1,3428 +1,1036 @@
-import { useState, useRef } from "react";
+import React, { useState, useEffect } from "react";
 
-// ─── Utilities ────────────────────────────────────────────────────────────────
+// ─── Themes ──────────────────────────────────────────────────────────────────
 
-function fmt(n) {
-  const abs = Math.abs(n);
-  return (n < 0 ? "-" : "") + "$" + abs.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const THEMES = {
+  classic: {
+    label: "Classic", desc: "Dark felt casino",
+    bgGrad: "radial-gradient(ellipse at 50% 30%, #1a3a1a 0%, #091a0d 60%, #060e08 100%)",
+    surface: "rgba(0,0,0,0.22)", surfaceBorder: "rgba(240,192,64,0.18)",
+    accent: "#f0c040", accentDim: "rgba(240,192,64,0.14)", accentBorder: "rgba(240,192,64,0.3)",
+    textDim: "#3a6a3a", textMid: "#5a8a5a", textBright: "#f0e8c0", titleColor: "#f0c040",
+    logBg: "rgba(0,0,0,0.35)", logBorder: "rgba(240,192,64,0.15)", logText: "#6aaa6a",
+    statBg: "rgba(0,0,0,0.2)", statBorder: "rgba(255,255,255,0.06)",
+    tileBg: "#fdf6e3", tileText: "#2a1a00", tileBorder: "#8b6914",
+    tileClosedBg: "#2a4a2a", tileClosedBorder: "#1a3a1a",
+    tileSelBg: "#f5c518", tileSelText: "#1a0f00", tileSelBorder: "#a07800",
+    tileSelShadow: "0 0 0 3px rgba(245,197,24,0.4), 0 4px 12px rgba(245,197,24,0.5)",
+    tileCursedBg: "rgba(180,20,20,0.25)", tileCursedText: "#e74c3c", tileCursedBorder: "#e74c3c",
+    danger: "#e74c3c",
+    btnGold: { bg: "linear-gradient(180deg,#d4a830,#a07820)", color: "#1a0f00", border: "#7a5810" },
+    btnGoldDis: { bg: "#3a3020", color: "#5a4a30", border: "#2a2010" },
+    btnGreen: { bg: "linear-gradient(180deg,#4a7a4a,#2a5a2a)", color: "#e8f4e8", border: "#1a4a1a" },
+    btnGreenDis: { bg: "#2a3a2a", color: "#4a5a4a", border: "#1a2a1a" },
+    btnRed: { bg: "linear-gradient(180deg,#c84040,#902020)", color: "#ffe8e8", border: "#701010" },
+    btnRedDis: { bg: "#3a2020", color: "#5a3030", border: "#2a1010" },
+    dieBg: "#fdf6e3", dieBorder: "#8b6914", diePip: "#2a1a00",
+    dieRollShadow: "0 0 0 3px #c8a832, 0 4px 16px rgba(0,0,0,0.4)",
+    safeLabel: "#6aaa6a", riskLabel: "#c87070",
+    safePanelBorder: "rgba(60,100,60,0.3)", riskPanelBorder: "rgba(100,40,40,0.3)",
+  },
+  bright: {
+    label: "Bright", desc: "Navy to purple evening",
+    bgGrad: "radial-gradient(ellipse at 50% 30%, #2a3a6a 0%, #1a2a4a 60%, #2a1a3a 100%)",
+    surface: "rgba(255,255,255,0.07)", surfaceBorder: "rgba(100,180,255,0.18)",
+    accent: "#64b4ff", accentDim: "rgba(100,180,255,0.14)", accentBorder: "rgba(100,180,255,0.3)",
+    textDim: "#6090b0", textMid: "#90b8d8", textBright: "#e0f0ff", titleColor: "#64b4ff",
+    logBg: "rgba(0,0,0,0.3)", logBorder: "rgba(100,180,255,0.15)", logText: "#90b8d8",
+    statBg: "rgba(255,255,255,0.04)", statBorder: "rgba(255,255,255,0.08)",
+    tileBg: "#e8f0ff", tileText: "#1a2a4a", tileBorder: "#4a6aaa",
+    tileClosedBg: "#1a2a5a", tileClosedBorder: "#0a1a4a",
+    tileSelBg: "#64b4ff", tileSelText: "#0a1a2a", tileSelBorder: "#3a84cf",
+    tileSelShadow: "0 0 0 3px rgba(100,180,255,0.4), 0 4px 12px rgba(100,180,255,0.5)",
+    tileCursedBg: "rgba(200,30,60,0.2)", tileCursedText: "#ff5577", tileCursedBorder: "#ff5577",
+    danger: "#ff5577",
+    btnGold: { bg: "linear-gradient(180deg,#64b4ff,#3a84cf)", color: "#0a1a2a", border: "#2a64af" },
+    btnGoldDis: { bg: "rgba(100,180,255,0.1)", color: "#3a5a7a", border: "rgba(100,180,255,0.2)" },
+    btnGreen: { bg: "linear-gradient(180deg,#4a7aaa,#2a5a8a)", color: "#e0f0ff", border: "#1a4a7a" },
+    btnGreenDis: { bg: "rgba(255,255,255,0.05)", color: "#3a5a7a", border: "rgba(255,255,255,0.1)" },
+    btnRed: { bg: "linear-gradient(180deg,#cc2244,#991122)", color: "#ffe8ee", border: "#771122" },
+    btnRedDis: { bg: "rgba(200,30,60,0.1)", color: "#5a2a3a", border: "rgba(200,30,60,0.2)" },
+    dieBg: "#e8f0ff", dieBorder: "#4a6aaa", diePip: "#1a2a4a",
+    dieRollShadow: "0 0 0 3px #64b4ff, 0 4px 16px rgba(0,0,0,0.4)",
+    safeLabel: "#90b8d8", riskLabel: "#ff5577",
+    safePanelBorder: "rgba(100,180,255,0.2)", riskPanelBorder: "rgba(255,85,119,0.2)",
+  },
+  neon: {
+    label: "Neon", desc: "Electric glow",
+    bgGrad: "radial-gradient(ellipse at 50% 30%, #1a0030 0%, #0a0015 60%, #000510 100%)",
+    surface: "rgba(255,255,255,0.03)", surfaceBorder: "rgba(0,255,204,0.2)",
+    accent: "#00ffcc", accentDim: "rgba(0,255,204,0.1)", accentBorder: "rgba(0,255,204,0.3)",
+    textDim: "#440066", textMid: "#882299", textBright: "#dd88ff", titleColor: "#ff00aa",
+    logBg: "rgba(0,0,0,0.5)", logBorder: "rgba(0,255,204,0.15)", logText: "#00ffcc",
+    statBg: "rgba(0,0,0,0.3)", statBorder: "rgba(0,255,204,0.1)",
+    tileBg: "#0d0020", tileText: "#00ffcc", tileBorder: "#440066",
+    tileClosedBg: "#050010", tileClosedBorder: "#220033",
+    tileSelBg: "#00ffcc", tileSelText: "#000510", tileSelBorder: "#00ccaa",
+    tileSelShadow: "0 0 0 3px rgba(0,255,204,0.4), 0 0 20px rgba(0,255,204,0.6)",
+    tileCursedBg: "rgba(255,0,102,0.15)", tileCursedText: "#ff0066", tileCursedBorder: "#ff0066",
+    danger: "#ff0066",
+    btnGold: { bg: "linear-gradient(180deg,#00ffcc,#00ccaa)", color: "#000510", border: "#00aa88" },
+    btnGoldDis: { bg: "rgba(0,255,204,0.06)", color: "#224433", border: "rgba(0,255,204,0.1)" },
+    btnGreen: { bg: "linear-gradient(180deg,#7700cc,#550099)", color: "#ffccff", border: "#440077" },
+    btnGreenDis: { bg: "rgba(119,0,204,0.08)", color: "#330044", border: "rgba(119,0,204,0.15)" },
+    btnRed: { bg: "linear-gradient(180deg,#ff0066,#cc0044)", color: "#fff0f5", border: "#aa0033" },
+    btnRedDis: { bg: "rgba(255,0,102,0.08)", color: "#440022", border: "rgba(255,0,102,0.15)" },
+    dieBg: "#0d0020", dieBorder: "#440066", diePip: "#00ffcc",
+    dieRollShadow: "0 0 0 3px #00ffcc, 0 0 20px rgba(0,255,204,0.5)",
+    safeLabel: "#00ffcc", riskLabel: "#ff0066",
+    safePanelBorder: "rgba(0,255,204,0.2)", riskPanelBorder: "rgba(255,0,102,0.2)",
+  },
+};
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const TOTAL_TILES = 12;
+const SAFE_DIE_FACES = ["blank", "blank", "blank", "+1", "+2", "wild"];
+const RISK_DIE_FACES = ["wild", "wild", "flip", "x2", "+3", "bust"];
+
+const FACE_LABELS = {
+  blank: "—", "+1": "+1", "+2": "+2", "+3": "+3",
+  wild: "★ Wild", flip: "⇅ Flip", x2: "×2", bust: "💀 Bust",
+};
+
+const FACE_COLORS = {
+  blank: "#8aab8a", "+1": "#c8b560", "+2": "#c8b560", "+3": "#e07840",
+  wild: "#7bafd4", flip: "#b07fc8", x2: "#e07840", bust: "#c84040",
+};
+
+const PHASE = {
+  IDLE: "idle", ROLLED: "rolled", EVENT_ROLLED: "event",
+  FLIP_PICK: "flip_pick", BUST_PICK: "bust_pick", GAME_OVER: "game_over",
+};
+
+const MODE = { SOLO: "solo", LOWEST: "lowest", SUDDEN: "sudden" };
+
+const BOARD_PRESETS = {
+  classic: { label: "Classic", desc: "1–9",     tiles: [1,2,3,4,5,6,7,8,9] },
+  full:    { label: "Full",    desc: "1–12",    tiles: [1,2,3,4,5,6,7,8,9,10,11,12] },
+  custom:  { label: "Custom",  desc: "Pick your own", tiles: null },
+};
+
+// ─── Pure helpers ─────────────────────────────────────────────────────────────
+
+function rollD6() { return Math.floor(Math.random() * 6) + 1; }
+
+function getDotPositions(n) {
+  return {
+    1:[[50,50]], 2:[[25,25],[75,75]], 3:[[25,25],[50,50],[75,75]],
+    4:[[25,25],[75,25],[25,75],[75,75]], 5:[[25,25],[75,25],[50,50],[25,75],[75,75]],
+    6:[[25,22],[75,22],[25,50],[75,50],[25,78],[75,78]],
+  }[n] || [];
 }
-function fmtShort(n) {
-  if (n === null) return "—";
-  const abs = Math.abs(n);
-  return (n < 0 ? "-" : "") + "$" + abs.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+function initialTiles(nums) {
+  const t = {};
+  (nums || Array.from({length:TOTAL_TILES},(_,i)=>i+1)).forEach(n => { t[n] = "open"; });
+  return t;
 }
-function nowISO() { return new Date().toISOString(); }
-function fmtTime(iso) {
-  const d = new Date(iso);
-  return d.toLocaleDateString("en-US", { month: "2-digit", day: "2-digit" }) +
-    " " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+
+function calcScore(tiles) {
+  return Object.entries(tiles).filter(([,s])=>s!=="closed").reduce((sum,[n])=>sum+parseInt(n),0);
 }
-const SOURCES = { manual: "Manual", sms: "SMS", api: "API" };
 
-// ─── SMS Parsing ──────────────────────────────────────────────────────────────
-
-// Patterns that yield a last4 digit string directly
-const SMS_PATTERNS = [
-  // PNC actual format: "PNC credit card x1234 balance as of MM/DD/YY is $X"
-  { regex: /x(\d{4})\s+balance\s+as\s+of\s+[\d/]+\s+is\s+\$([0-9,]+\.\d{2})/i, label: "PNC" },
-  // PNC fallback: anything with x1234 ... is $X
-  { regex: /x(\d{4})[^$]*is\s+\$([0-9,]+\.\d{2})/i, label: "PNC" },
-  // PNC old style: "account ending in x1234 ... $X"
-  { regex: /account\s+ending\s+in\s+x+(\d{4})[^$]*\$([0-9,]+\.\d{2})/i, label: "PNC" },
-  // Citi style: "acct ending in 1234 has a balance of $X"
-  { regex: /acct\s+ending\s+in\s+(\d{4})[^$]*balance\s+of\s+\$([0-9,]+\.\d{2})/i, label: "Citi" },
-  // Citi fallback: "acct ending in 1234 ... $X"
-  { regex: /acct\s+ending\s+in\s+(\d{4})[^$]*\$([0-9,]+\.\d{2})/i, label: "Citi" },
-  // Generic "account ending in 1234 ... $X" or "account ending 1234 ... $X"
-  { regex: /account\s+ending\s+(?:in\s+)?(\d{4})[^$]*\$([0-9,]+\.\d{2})/i, label: "Bank" },
-  // Chase/generic: "Acct *1234 balance: $X"
-  { regex: /Acct\s*\*?(\d{4})[^$]*\$([0-9,]+\.\d{2})/i, label: "Chase" },
-  // Capital One: "Your balance is $X for account ending in 1234"
-  { regex: /balance\s+is\s+\$([0-9,]+\.\d{2})\s+for\s+account\s+ending\s+in\s+(\d{4})/i, label: "Capital One", flip: true },
-  // Generic: "balance of $X ... 1234" (Citi fallback, others)
-  { regex: /balance\s+of\s+\$([0-9,]+\.\d{2})[^0-9]*(\d{4})/i, label: "Bank", flip: true },
-  // Generic account *1234
-  { regex: /account\s*\*?(\d{4})[^$]*\$([0-9,]+\.\d{2})/i, label: "Bank" },
-  // Broad fallback: any x1234 ... $X pattern
-  { regex: /x(\d{4})[^$]*\$([0-9,]+\.\d{2})/i, label: "Bank" },
-  // Capital One: "…(1234) bal is $X" or "(1234) balance is $X"
-  { regex: /\((\d{4})\)\s+bal(?:ance)?\s+is\s+\$([0-9,]+\.\d{2})/i, label: "Capital One" },
-  // Broad parenthesis fallback: (1234) ... $X
-  { regex: /\((\d{4})\)[^$]*\$([0-9,]+\.\d{2})/i, label: "Bank" },
-];
-
-// Card-name patterns — no last4 digits in the message; returns { cardName, balance }
-const CARD_NAME_PATTERNS = [
-  // "Chase Sapphire Reserve Visa: Your balance of $296.93 ..."
-  // "Chase Freedom Unlimited: Your balance of $X ..."
-  { regex: /(Chase\s+[A-Za-z ]+?)(?:Visa|Mastercard)?:\s*Your\s+balance\s+of\s+\$([0-9,]+\.\d{2})/i, label: "Chase" },
-  // Generic: "CardName: ... balance of $X" or "CardName: ... balance: $X"
-  { regex: /^([A-Za-z ]+?):\s*.*balance\s+(?:of|is)?:?\s*\$([0-9,]+\.\d{2})/im, label: "Card" },
-];
-
-// Returns:
-//   { type: "digits",   accountLast4, balance, label }   — known account, save immediately
-//   { type: "cardname", cardName,     balance, label }   — no digits, needs account confirmation
-//   null — unrecognised
-function parseSMS(text) {
-  // Try digit-bearing patterns first
-  for (const p of SMS_PATTERNS) {
-    const m = text.match(p.regex);
-    if (m) {
-      const last4  = p.flip ? m[2] : m[1];
-      const balStr = p.flip ? m[1] : m[2];
-      const balance = parseFloat(balStr.replace(/,/g, ""));
-      if (!isNaN(balance) && last4.length === 4)
-        return { type: "digits", accountLast4: last4, balance, label: p.label };
+function validCombos(total, tiles) {
+  const open = Object.entries(tiles).filter(([,s])=>s==="open").map(([n])=>parseInt(n));
+  const results = [];
+  function bt(rem, start, chosen) {
+    if (rem===0) { results.push([...chosen]); return; }
+    for (let i=start; i<open.length; i++) {
+      if (open[i]<=rem) { chosen.push(open[i]); bt(rem-open[i],i+1,chosen); chosen.pop(); }
     }
   }
-  // Try card-name patterns (no digits)
-  for (const p of CARD_NAME_PATTERNS) {
-    const m = text.match(p.regex);
-    if (m) {
-      const cardName = m[1].trim();
-      const balance  = parseFloat(m[2].replace(/,/g, ""));
-      if (!isNaN(balance) && cardName.length > 1)
-        return { type: "cardname", cardName, balance, label: p.label };
-    }
-  }
-  return null;
+  bt(total,0,[]);
+  return results;
 }
 
-// ─── Duplicate Detection ──────────────────────────────────────────────────────
+// ─── Shared UI components ─────────────────────────────────────────────────────
 
-function isDuplicate(snapshots, last4, balance, source) {
-  const TWO_MIN = 2 * 60 * 1000;
-  return snapshots.some(s =>
-    s.accountLast4 === last4 && s.balance === balance && s.source === source &&
-    Math.abs(new Date(s.timestamp) - new Date()) < TWO_MIN
+function Btn({ onClick, disabled, children, variant="green", t }) {
+  const key = variant==="gold" ? "btnGold" : variant==="red" ? "btnRed" : "btnGreen";
+  const disKey = key + "Dis";
+  const s = disabled ? t[disKey] : t[key];
+  return (
+    <button onClick={onClick} disabled={disabled} style={{
+      background: s.bg, color: s.color,
+      border: `2px solid ${s.border}`,
+      padding: "10px 18px", borderRadius: 8,
+      fontFamily:"'Georgia',serif", fontWeight:"bold", fontSize:13,
+      cursor: disabled?"not-allowed":"pointer",
+      boxShadow: disabled?"none":"0 3px 8px rgba(0,0,0,0.35)",
+      transition:"all 0.15s", letterSpacing:0.3, whiteSpace:"nowrap",
+    }}>{children}</button>
   );
 }
 
-// ─── Account Roles ────────────────────────────────────────────────────────────
-// role: "spending_bank" | "credit_card" | "bills_bank" | "holding"
-// incomeRank: 0 = Primary, 1 = Secondary, 2 = Tertiary, etc. (null for spending)
-// incomeLabel: custom label e.g. "Primary", "Secondary", "Backup"
-
-const RANK_NAMES = ["Primary", "Secondary", "Tertiary", "Quaternary"];
-function rankName(r) { return RANK_NAMES[r] ?? `#${r + 1}`; }
-
-// ─── Safe-to-Spend Engine ────────────────────────────────────────────────────
-// spending_bank total minus credit_card total = safe to spend
-// bills_bank and holding are excluded
-
-function computeWaterfall(accounts, latestBalance) {
-  const spendingBanks = accounts
-    .filter(a => a.role === "spending_bank")
-    .sort((a, b) => (a.incomeRank ?? 99) - (b.incomeRank ?? 99));
-  const creditCards = accounts.filter(a => a.role === "credit_card");
-
-  const bankTotal = spendingBanks.reduce((s, a) => s + (latestBalance(a.last4) ?? 0), 0);
-  const cardTotal = creditCards.reduce((s, a)  => s + (latestBalance(a.last4) ?? 0), 0);
-
-  if (!spendingBanks.length) return { safeToSpend: null, residuals: {} };
-
-  const safeToSpend = bankTotal - cardTotal;
-
-  let remaining = cardTotal;
-  const residuals = {};
-  for (const acct of spendingBanks) {
-    const bal = latestBalance(acct.last4) ?? 0;
-    if (remaining <= 0)       { residuals[acct.last4] = bal; }
-    else if (bal >= remaining){ residuals[acct.last4] = bal - remaining; remaining = 0; }
-    else                      { residuals[acct.last4] = 0; remaining -= bal; }
-  }
-  return { safeToSpend, residuals };
-}
-
-// Bills bank health
-function computeBillsHealth(accounts, bills, latestBalance) {
-  const billsBanks = accounts.filter(a => a.role === "bills_bank");
-  const totalBillsBal = billsBanks.reduce((s, a) => s + (latestBalance(a.last4) ?? 0), 0);
-  const FREQ = { weekly:52, biweekly:26, semimonthly:24, monthly:12, quarterly:4, annual:1, onetime:0 };
-  const monthlyTotal = bills.reduce((s, b) => {
-    const myPct = parseFloat(b.myPct) || 100;
-    return s + (parseFloat(b.amount)||0) * ((FREQ[b.frequency]||12)/12) * (myPct/100);
-  }, 0);
-  return { billsBanks, totalBillsBal, monthlyTotal };
-}
-
-// ─── Threshold Color ──────────────────────────────────────────────────────────
-// mode: "dollar" | "percent"
-// For percent mode, startingBalance is the first-ever recorded balance for that account
-
-function bandColor(value, thresholds, mode, startingBalance) {
-  if (value === null) return "#4A6280";
-  const { hi, mid, lo } = thresholds;
-  const hiN  = parseFloat(hi);
-  const midN = parseFloat(mid);
-  const loN  = parseFloat(lo);
-  if (isNaN(hiN) || isNaN(midN) || isNaN(loN)) return value >= 0 ? "#00D4AA" : "#FF6B6B";
-
-  let compare = value;
-  if (mode === "percent" && startingBalance && startingBalance > 0) {
-    compare = (value / startingBalance) * 100;
-  }
-  if (compare >= hiN)  return "#00D4AA";
-  if (compare >= midN) return "#F5C842";
-  if (compare >= loN)  return "#F5A623";
-  return "#FF6B6B";
-}
-
-// ─── Due Date Helpers ────────────────────────────────────────────────────────
-
-// Returns days until due for a fixed day-of-month (handles month wrap)
-function daysUntilDue(dayOfMonth) {
-  if (!dayOfMonth) return null;
-  const today = new Date();
-  const thisMonth = new Date(today.getFullYear(), today.getMonth(), dayOfMonth);
-  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth);
-  const target = thisMonth >= today ? thisMonth : nextMonth;
-  return Math.ceil((target - today) / (1000 * 60 * 60 * 24));
-}
-
-// Returns the next due date as a short string e.g. "Jul 15"
-function nextDueDateStr(dayOfMonth) {
-  if (!dayOfMonth) return null;
-  const today = new Date();
-  const thisMonth = new Date(today.getFullYear(), today.getMonth(), dayOfMonth);
-  const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, dayOfMonth);
-  const target = thisMonth >= today ? thisMonth : nextMonth;
-  return target.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-}
-
-// Returns color based on days until due and user thresholds
-function dueColor(daysLeft, dt) {
-  if (daysLeft === null) return null;
-  const g = parseInt(dt.green);
-  const y = parseInt(dt.yellow);
-  const r = parseInt(dt.red);
-  if (daysLeft >= g)  return "#00D4AA";
-  if (daysLeft >= y)  return "#F5C842";
-  if (daysLeft >= r)  return "#F5A623";
-  return "#FF6B6B";
-}
-
-// ─── localStorage helpers ─────────────────────────────────────────────────────
-
-const S2S_VERSION = "v1.3";
-
-function initStorage() {
-  try {
-    if (localStorage.getItem("s2s_version") !== S2S_VERSION) {
-      // New version — wipe all app data so sample data loads fresh
-      Object.keys(localStorage).filter(k=>k.startsWith("s2s_")).forEach(k=>localStorage.removeItem(k));
-      localStorage.setItem("s2s_version", S2S_VERSION);
-    }
-  } catch {}
-}
-initStorage();
-
-function load(key, fallback) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : fallback;
-  } catch { return fallback; }
-}
-function save(key, value) {
-  try { localStorage.setItem(key, JSON.stringify(value)); } catch {}
-}
-function resetAllData() {
-  try {
-    Object.keys(localStorage).filter(k=>k.startsWith("s2s_")).forEach(k=>localStorage.removeItem(k));
-    window.location.reload();
-  } catch {}
-}
-
-// ─── Defaults (used only on first launch) ────────────────────────────────────
-
-const DEFAULT_ACCOUNTS = [];
-
-const DEFAULT_SNAPSHOTS = [];
-const DEFAULT_THRESHOLDS     = { hi: "60", mid: "30", lo: "15" };
-const DEFAULT_THRESHOLD_MODE = "percent"; // "dollar" | "percent"
-const DEFAULT_DUE_THRESHOLDS    = { green: "14", yellow: "7",    red: "3"    }; // days until due
-const DEFAULT_INVEST_THRESHOLDS = { green: "75",  yellow: "40",  red: "10"   }; // % of goal
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const S = `
-  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Space+Grotesk:wght@400;600;700&display=swap');
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { background:#0A1628; color:#E8EEF6; font-family:'DM Sans',sans-serif; -webkit-font-smoothing:antialiased; overscroll-behavior:none; }
-  .app { max-width:430px; margin:0 auto; min-height:100vh; display:flex; flex-direction:column; background:#0A1628; }
-  .screen { flex:1; padding:0 0 96px; overflow-y:auto; }
-
-  /* header */
-  .header { padding:52px 24px 20px; display:flex; justify-content:space-between; align-items:flex-end; }
-  .header-label { font-size:11px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#4A6280; }
-  .header-date  { font-size:13px; color:#4A6280; }
-
-  /* hero */
-  .hero { padding:8px 24px 28px; text-align:center; }
-  .hero-eyebrow { font-size:11px; font-weight:600; letter-spacing:3px; text-transform:uppercase; color:#4A6280; margin-bottom:12px; }
-  .hero-amount  { font-family:'Space Grotesk',monospace; font-size:72px; font-weight:700; line-height:1; letter-spacing:-2px; transition:color 0.6s ease; }
-  .hero-amount.anim { animation:breathe 1.6s ease-out forwards; }
-  @keyframes breathe { 0%{opacity:0;transform:scale(.96)} 60%{opacity:1;transform:scale(1.01)} 100%{opacity:1;transform:scale(1)} }
-  .hero-sub { margin-top:10px; font-size:13px; color:#4A6280; }
-
-  /* waterfall strip — shows each income account's share of the total */
-  .waterfall-strip { margin:0 24px 28px; display:flex; gap:3px; height:5px; border-radius:3px; overflow:hidden; }
-  .waterfall-seg   { border-radius:3px; transition:flex 0.5s ease, background 0.5s ease; min-width:3px; }
-
-  .divider { height:1px; background:#1A2E4A; margin:0 24px 24px; }
-  .section-label { font-size:10px; font-weight:600; letter-spacing:2.5px; text-transform:uppercase; color:#2E4A6A; padding:0 24px; margin-bottom:10px; }
-
-  /* account cards */
-  .account-list { padding:0 16px; margin-bottom:28px; display:flex; flex-direction:column; gap:8px; }
-  .account-card { background:#111E33; border-radius:14px; padding:16px 18px; display:flex; justify-content:space-between; align-items:center; border:1px solid #1A2E4A; }
-  .account-card.rank-0 { border-color:#00D4AA28; background:#0D1F35; }
-  .account-card.due    { border-left-width:3px !important; padding-left:15px !important; }
-  .account-card.rank-1 { border-color:#7B68EE28; background:#0E1D35; }
-  .account-card-left { display:flex; align-items:center; gap:12px; }
-  .acct-rank-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-  .account-label   { font-size:14px; font-weight:500; color:#C8D8E8; }
-  .account-last4   { font-size:12px; color:#4A6280; margin-top:2px; }
-  .account-balance { font-family:'Space Grotesk',monospace; font-size:17px; font-weight:600; color:#E8EEF6; text-align:right; }
-  .account-balance.no-data { color:#2E4A6A; font-size:14px; }
-  .rank-badge { font-size:10px; font-weight:600; letter-spacing:.5px; padding:2px 7px; border-radius:10px; margin-top:3px; display:inline-block; }
-
-  /* sms panel */
-  .sms-panel { margin:0 16px 28px; background:#0D1F35; border:1px dashed #1A3A5A; border-radius:14px; padding:18px; }
-  .sms-panel-title { font-size:12px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:#9B88FF; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
-  .sms-textarea { width:100%; background:#0A1628; border:1px solid #1A2E4A; border-radius:10px; color:#C8D8E8; font-family:'DM Sans',sans-serif; font-size:13px; padding:12px; resize:none; outline:none; min-height:80px; transition:border-color .2s; }
-  .sms-textarea:focus { border-color:#9B88FF; }
-  .sms-textarea::placeholder { color:#2E4A6A; }
-  .sms-parse-btn { width:100%; margin-top:10px; background:#9B88FF; color:#fff; border:none; border-radius:10px; padding:12px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; }
-  .sms-parse-btn:active { opacity:.85; }
-  .sms-result { margin-top:10px; font-size:13px; padding:10px 12px; border-radius:8px; }
-  .sms-result.success { background:#00D4AA12; color:#00D4AA; }
-  .sms-result.error   { background:#FF6B6B12; color:#FF6B6B; }
-  .sms-result .select-input { margin-bottom:0; font-size:13px; padding:9px 11px; }
-
-  /* manual entry */
-  .manual-panel { margin:0 16px 28px; background:#0D1F35; border:1px dashed #1A3A5A; border-radius:14px; padding:18px; }
-  .manual-title { font-size:12px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:#F5A623; margin-bottom:12px; }
-  .select-input { width:100%; background:#0A1628; border:1px solid #1A2E4A; border-radius:10px; color:#C8D8E8; font-family:'DM Sans',sans-serif; font-size:14px; padding:11px 13px; outline:none; margin-bottom:10px; appearance:none; cursor:pointer; }
-  .select-input:focus { border-color:#F5A623; }
-
-  /* history */
-  .history-list  { padding:0 16px; display:flex; flex-direction:column; gap:8px; }
-  .history-item  { background:#111E33; border:1px solid #1A2E4A; border-radius:12px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
-  .history-time    { font-size:11px; color:#4A6280; margin-top:2px; }
-  .history-account { font-size:14px; font-weight:500; color:#C8D8E8; }
-  .history-source  { font-size:10px; padding:2px 7px; border-radius:10px; margin-top:4px; display:inline-block; }
-  .src-manual { background:#F5A62320; color:#F5A623; }
-  .src-sms    { background:#9B88FF20; color:#9B88FF; }
-  .src-api    { background:#00D4AA20; color:#00D4AA; }
-  .history-balance { font-family:'Space Grotesk',monospace; font-size:18px; font-weight:600; color:#E8EEF6; text-align:right; }
-  .history-empty   { text-align:center; color:#2E4A6A; padding:48px 24px; font-size:14px; line-height:1.6; }
-
-  /* settings */
-  .settings-section { padding:0 16px; margin-bottom:28px; }
-  .settings-row { background:#111E33; border:1px solid #1A2E4A; border-radius:12px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-  .settings-row-label { font-size:14px; color:#C8D8E8; }
-  .settings-row-sub   { font-size:12px; color:#4A6280; margin-top:2px; }
-  .pill { font-size:11px; padding:4px 10px; border-radius:20px; font-weight:600; cursor:pointer; border:none; font-family:'DM Sans',sans-serif; }
-  .pill-green  { background:#00D4AA20; color:#00D4AA; }
-  .pill-teal   { background:#00D4AA; color:#0A1628; }
-  .pill-red    { background:#FF6B6B18; color:#FF6B6B; }
-  .pill-purple { background:#9B88FF20; color:#9B88FF; }
-  .pill-up     { background:#1A2E4A; color:#C8D8E8; }
-  .pill-down   { background:#1A2E4A; color:#C8D8E8; }
-
-  /* add account form */
-  .add-form { background:#0D1F35; border:1px dashed #1A3A5A; border-radius:14px; padding:18px; margin:0 16px 24px; }
-  .add-form-title { font-size:12px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:#F5A623; margin-bottom:12px; }
-  .input-row { display:flex; gap:10px; }
-  .text-input { flex:1; background:#0A1628; border:1px solid #1A2E4A; border-radius:10px; color:#C8D8E8; font-family:'DM Sans',sans-serif; font-size:14px; padding:11px 13px; outline:none; transition:border-color .2s; min-width:0; }
-  .text-input:focus { border-color:#F5A623; }
-  .text-input::placeholder { color:#2E4A6A; }
-  .add-btn { background:#F5A623; color:#0A1628; border:none; border-radius:10px; padding:11px 18px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:700; cursor:pointer; white-space:nowrap; }
-  .add-btn:active { opacity:.85; }
-  .role-toggle { display:flex; gap:8px; margin-bottom:10px; }
-  .role-btn { flex:1; padding:9px; border-radius:10px; border:1px solid #1A2E4A; background:#0A1628; color:#4A6280; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; }
-  .role-btn.active { background:#1A2E4A; color:#E8EEF6; border-color:#2E4A6A; }
-
-  /* threshold panel */
-  .threshold-panel { background:#0D1F35; border:1px solid #1A3A5A; border-radius:14px; padding:18px; margin:0 16px 24px; }
-  .threshold-title { font-size:12px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:#4A6280; margin-bottom:4px; }
-  .threshold-hint  { font-size:12px; color:#2E4A6A; margin-bottom:14px; line-height:1.5; }
-  .mode-toggle { display:flex; gap:6px; margin-bottom:14px; }
-  .mode-btn { flex:1; padding:8px; border-radius:10px; border:1px solid #1A2E4A; background:#0A1628; color:#4A6280; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; text-align:center; }
-  .mode-btn.active { background:#1A2E4A; color:#E8EEF6; border-color:#2E4A6A; }
-  .band-preview { display:flex; height:4px; border-radius:2px; overflow:hidden; margin-bottom:14px; gap:2px; }
-  .band-seg { flex:1; border-radius:2px; }
-  .threshold-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
-  .threshold-swatch { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
-  .threshold-input { flex:1; background:#0A1628; border:1px solid #1A2E4A; border-radius:10px; color:#C8D8E8; font-family:'DM Sans',sans-serif; font-size:14px; padding:10px 13px; outline:none; transition:border-color .2s; min-width:0; }
-  .threshold-input:focus { border-color:#4A6280; }
-  .threshold-input::placeholder { color:#2E4A6A; }
-  .threshold-unit { font-size:13px; color:#4A6280; min-width:16px; }
-  .threshold-save { width:100%; margin-top:6px; background:#1A2E4A; color:#C8D8E8; border:none; border-radius:10px; padding:11px; font-family:'DM Sans',sans-serif; font-size:14px; font-weight:600; cursor:pointer; }
-  .threshold-save:hover { background:#243E5A; }
-
-  /* nav */
-  .nav { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:430px; background:#0D1929; border-top:1px solid #1A2E4A; display:flex; overflow-x:auto; overflow-y:hidden; padding:10px 0 24px; z-index:100; scrollbar-width:none; -ms-overflow-style:none; }
-  .nav::-webkit-scrollbar { display:none; }
-  .nav-btn { flex:0 0 auto; min-width:60px; display:flex; flex-direction:column; align-items:center; gap:3px; background:none; border:none; cursor:pointer; padding:4px 8px; }
-  .nav-icon { width:18px; height:18px; }
-  .nav-label { font-family:'DM Sans',sans-serif; font-size:9px; font-weight:500; letter-spacing:0.5px; text-transform:uppercase; transition:color .15s; }
-  .nav-btn.active .nav-label { color:#00D4AA; }
-  .nav-btn        .nav-label { color:#2E4A6A; }
-  .nav-btn.active .nav-icon path,
-  .nav-btn.active .nav-icon rect,
-  .nav-btn.active .nav-icon circle { stroke:#00D4AA !important; }
-  .nav-btn        .nav-icon path,
-  .nav-btn        .nav-icon rect,
-  .nav-btn        .nav-icon circle { stroke:#2E4A6A; transition:stroke .15s; }
-
-  /* toast */
-  .toast { position:fixed; top:20px; left:50%; transform:translateX(-50%); background:#00D4AA; color:#0A1628; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; padding:10px 20px; border-radius:24px; z-index:999; animation:toastIn .25s ease, toastOut .3s ease 2s forwards; pointer-events:none; white-space:nowrap; }
-  @keyframes toastIn  { from{opacity:0;transform:translateX(-50%) translateY(-8px)} to{opacity:1;transform:translateX(-50%) translateY(0)} }
-  @keyframes toastOut { from{opacity:1} to{opacity:0} }
-
-  .screen-title { font-size:20px; font-weight:600; color:#E8EEF6; padding:52px 24px 24px; font-family:'Space Grotesk',sans-serif; }
-
-  /* ── Dashboard ── */
-  .dash-grid { padding:0 16px; display:flex; flex-direction:column; gap:12px; margin-bottom:24px; }
-  .dash-card { background:#111E33; border:1px solid #1A2E4A; border-radius:16px; padding:18px 20px; }
-  .dash-card-label { font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#2E4A6A; margin-bottom:8px; }
-  .dash-card-value { font-family:'Space Grotesk',monospace; font-size:36px; font-weight:700; line-height:1; }
-  .dash-card-sub   { font-size:12px; color:#4A6280; margin-top:6px; }
-  .dash-row { display:flex; gap:10px; }
-  .dash-half { flex:1; }
-  .dash-card.small .dash-card-value { font-size:22px; }
-  .upcoming-list { display:flex; flex-direction:column; gap:0; margin-top:4px; }
-  .upcoming-item { display:flex; justify-content:space-between; align-items:center; padding:10px 0; border-bottom:1px solid #1A2E4A; }
-  .upcoming-item:last-child { border-bottom:none; }
-  .upcoming-name { font-size:13px; color:#C8D8E8; }
-  .upcoming-due  { font-size:11px; color:#4A6280; margin-top:2px; }
-  .upcoming-amt  { font-family:'Space Grotesk',monospace; font-size:14px; font-weight:600; color:#E8EEF6; }
-  .suggest-card { background:#0D1F35; border:1px solid #00D4AA28; border-radius:16px; padding:18px 20px; margin:0 16px 16px; }
-  .suggest-label { font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#00D4AA; margin-bottom:6px; }
-  .suggest-title { font-size:16px; font-weight:600; color:#E8EEF6; margin-bottom:4px; }
-  .suggest-reason { font-size:12px; color:#4A6280; line-height:1.5; }
-
-  /* ── Bills ── */
-  .bill-list { padding:0 16px; display:flex; flex-direction:column; gap:8px; margin-bottom:80px; }
-  .bill-card { background:#111E33; border:1px solid #1A2E4A; border-radius:14px; padding:16px 18px; }
-  .bill-card-top { display:flex; justify-content:space-between; align-items:flex-start; }
-  .bill-name { font-size:15px; font-weight:600; color:#E8EEF6; }
-  .bill-meta { font-size:12px; color:#4A6280; margin-top:3px; line-height:1.6; }
-  .bill-amount { font-family:'Space Grotesk',monospace; font-size:20px; font-weight:700; color:#E8EEF6; text-align:right; }
-  .bill-amount-sub { font-size:11px; color:#4A6280; text-align:right; margin-top:2px; }
-  .bill-tags { display:flex; gap:6px; flex-wrap:wrap; margin-top:10px; }
-  .bill-tag { font-size:10px; font-weight:600; padding:2px 8px; border-radius:10px; }
-  .tag-auto   { background:#00D4AA18; color:#00D4AA; }
-  .tag-fixed  { background:#9B88FF18; color:#9B88FF; }
-  .tag-var    { background:#F5A62318; color:#F5A623; }
-  .tag-ef     { background:#F5C84218; color:#F5C842; }
-  .tag-retire { background:#7B68EE18; color:#9B88FF; }
-  .bill-actions { display:flex; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid #1A2E4A; }
-  .bill-action-btn { flex:1; padding:8px; border-radius:10px; border:none; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; }
-  .btn-edit   { background:#1A2E4A; color:#C8D8E8; }
-  .btn-delete { background:#FF6B6B18; color:#FF6B6B; }
-  .fab { position:fixed; bottom:90px; right:20px; width:52px; height:52px; border-radius:26px; background:#00D4AA; border:none; color:#0A1628; font-size:26px; cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 20px #00D4AA40; z-index:50; }
-  .modal-overlay { position:fixed; inset:0; background:#000000CC; z-index:200; display:flex; align-items:flex-end; }
-  .modal { background:#0D1929; border-radius:20px 20px 0 0; padding:24px 20px 40px; width:100%; max-height:90vh; overflow-y:auto; }
-  .modal-title { font-size:18px; font-weight:600; color:#E8EEF6; font-family:'Space Grotesk',sans-serif; margin-bottom:20px; }
-  .form-label { font-size:11px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:#4A6280; margin-bottom:6px; display:block; }
-  .form-group { margin-bottom:16px; }
-  .form-row { display:flex; gap:10px; }
-  .form-row .form-group { flex:1; }
-  .form-input { width:100%; background:#0A1628; border:1px solid #1A2E4A; border-radius:10px; color:#C8D8E8; font-family:'DM Sans',sans-serif; font-size:14px; padding:11px 13px; outline:none; transition:border-color .2s; }
-  .form-input:focus { border-color:#9B88FF; }
-  .form-input::placeholder { color:#2E4A6A; }
-  .form-select { width:100%; background:#0A1628; border:1px solid #1A2E4A; border-radius:10px; color:#C8D8E8; font-family:'DM Sans',sans-serif; font-size:14px; padding:11px 13px; outline:none; appearance:none; cursor:pointer; }
-  .form-toggle-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid #1A2E4A; }
-  .form-toggle-label { font-size:14px; color:#C8D8E8; }
-  .toggle { width:42px; height:24px; border-radius:12px; border:none; cursor:pointer; position:relative; transition:background .2s; flex-shrink:0; }
-  .toggle.on  { background:#00D4AA; }
-  .toggle.off { background:#1A2E4A; }
-  .toggle-knob { width:18px; height:18px; border-radius:9px; background:#fff; position:absolute; top:3px; transition:left .2s; }
-  .toggle.on  .toggle-knob { left:21px; }
-  .toggle.off .toggle-knob { left:3px; }
-  .form-save-btn { width:100%; margin-top:20px; background:#00D4AA; color:#0A1628; border:none; border-radius:12px; padding:14px; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:700; cursor:pointer; }
-  .form-cancel-btn { width:100%; margin-top:10px; background:transparent; color:#4A6280; border:none; padding:12px; font-family:'DM Sans',sans-serif; font-size:14px; cursor:pointer; }
-
-  /* ── Paycheck Planner ── */
-  .planner-hero { background:#111E33; border:1px solid #1A2E4A; border-radius:16px; padding:24px 20px; margin:0 16px 16px; }
-  .planner-row { display:flex; justify-content:space-between; align-items:baseline; padding:8px 0; border-bottom:1px solid #1A2E4A; }
-  .planner-row:last-child { border-bottom:none; }
-  .planner-lbl { font-size:13px; color:#4A6280; }
-  .planner-val { font-family:'Space Grotesk',monospace; font-size:26px; font-weight:700; }
-  .planner-section { padding:0 16px; margin-bottom:28px; }
-  .planner-bill-row { background:#111E33; border:1px solid #1A2E4A; border-radius:12px; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; }
-  .planner-bill-name { font-size:14px; color:#C8D8E8; }
-  .planner-bill-sub  { font-size:11px; color:#4A6280; margin-top:2px; }
-  .planner-bill-amt  { font-family:'Space Grotesk',monospace; font-size:16px; font-weight:600; color:#E8EEF6; }
-
-  /* ── Roadmap ── */
-  .roadmap-container { padding:16px 16px 100px; }
-  .roadmap-step { display:flex; gap:14px; align-items:flex-start; }
-  .step-spine { display:flex; flex-direction:column; align-items:center; width:16px; flex-shrink:0; }
-  .step-dot { width:16px; height:16px; border-radius:8px; flex-shrink:0; border:2px solid transparent; }
-  .step-dot.done    { background:#00D4AA; border-color:#00D4AA; }
-  .step-dot.current { background:#0A1628; border-color:#00D4AA; box-shadow:0 0 0 3px #00D4AA30; }
-  .step-dot.future  { background:#1A2E4A; border-color:#1A2E4A; }
-  .step-line { width:2px; flex:1; min-height:20px; margin:3px 0; }
-  .step-line.done   { background:#00D4AA40; }
-  .step-line.future { background:#1A2E4A; }
-  .step-body { flex:1; padding-bottom:16px; }
-  .step-label { font-size:15px; font-weight:600; margin-bottom:4px; }
-  .step-label.done    { color:#4A6280; }
-  .step-label.current { color:#E8EEF6; }
-  .step-label.future  { color:#2E4A6A; }
-  .step-badge { font-size:10px; font-weight:600; letter-spacing:1px; padding:2px 8px; border-radius:10px; display:inline-block; margin-bottom:6px; }
-  .badge-current { background:#00D4AA20; color:#00D4AA; }
-  .badge-done    { background:#1A2E4A; color:#4A6280; }
-  .roadmap-actions { display:flex; gap:6px; flex-wrap:wrap; }
-  .roadmap-btn { font-size:11px; padding:4px 10px; border-radius:8px; border:none; font-family:'DM Sans',sans-serif; font-weight:600; cursor:pointer; }
-  .rmbtn-done    { background:#00D4AA20; color:#00D4AA; }
-  .rmbtn-current { background:#9B88FF20; color:#9B88FF; }
-  .rmbtn-del     { background:#FF6B6B18; color:#FF6B6B; }
-  .rmbtn-up      { background:#1A2E4A; color:#C8D8E8; }
-  .rmbtn-down    { background:#1A2E4A; color:#C8D8E8; }
-
-  /* ── Investment Goals ── */
-  .invest-list { padding:0 16px; display:flex; flex-direction:column; gap:10px; margin-bottom:80px; }
-  .invest-card { background:#111E33; border:1px solid #1A2E4A; border-radius:14px; padding:18px; }
-  .invest-top  { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
-  .invest-name { font-size:15px; font-weight:600; color:#E8EEF6; }
-  .invest-date { font-size:11px; color:#4A6280; margin-top:3px; }
-  .invest-pct  { font-family:'Space Grotesk',monospace; font-size:28px; font-weight:700; color:#00D4AA; }
-  .invest-track { display:flex; justify-content:space-between; margin-bottom:6px; }
-  .invest-track-lbl { font-size:11px; color:#4A6280; }
-  .invest-track-val { font-family:'Space Grotesk',monospace; font-size:13px; color:#C8D8E8; }
-  .progress-bar  { height:6px; border-radius:3px; background:#1A2E4A; overflow:hidden; margin-bottom:12px; }
-  .progress-fill { height:100%; border-radius:3px; background:#00D4AA; transition:width .5s ease; }
-  .invest-actions { display:flex; gap:8px; padding-top:12px; border-top:1px solid #1A2E4A; }
-
-  /* ── Roadmap visual ── */
-  .roadmap-visual { position:relative; padding:20px 16px 40px; overflow:hidden; }
-  .road-svg { width:100%; display:block; }
-  .milestone-popup { position:absolute; background:#111E33; border:1px solid #1A2E4A; border-radius:10px; padding:8px 12px; font-size:12px; color:#C8D8E8; max-width:140px; pointer-events:none; }
-  .milestone-popup.done    { border-color:#00D4AA40; }
-  .milestone-popup.current { border-color:#00D4AA; box-shadow:0 0 12px #00D4AA30; }
-  .milestone-popup.future  { opacity:0.5; }
-  .milestone-date { font-size:10px; color:#4A6280; margin-top:3px; }
-  .roadmap-edit-date { font-size:11px; color:#9B88FF; cursor:pointer; text-decoration:underline; }
-
-  /* ── Bills list view ── */
-  .view-toggle { display:flex; gap:6px; padding:0 16px 16px; }
-  .view-btn { flex:1; padding:8px; border-radius:10px; border:1px solid #1A2E4A; background:#0A1628; color:#4A6280; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all .15s; text-align:center; }
-  .view-btn.active { background:#1A2E4A; color:#E8EEF6; border-color:#2E4A6A; }
-  .bills-table { width:100%; border-collapse:collapse; font-size:13px; }
-  .bills-table th { text-align:left; padding:8px 12px; font-size:10px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:#2E4A6A; border-bottom:1px solid #1A2E4A; }
-  .bills-table td { padding:12px; border-bottom:1px solid #111E33; color:#C8D8E8; vertical-align:middle; }
-  .bills-table tr:last-child td { border-bottom:none; }
-  .bills-table tr:hover td { background:#111E3320; }
-  .bills-table-wrap { margin:0 16px 80px; background:#111E33; border:1px solid #1A2E4A; border-radius:14px; overflow:hidden; overflow-x:auto; }
-  .tbl-input { background:transparent; border:none; color:#C8D8E8; font-family:'DM Sans',sans-serif; font-size:13px; width:100%; outline:none; padding:2px 0; }
-  .tbl-input:focus { border-bottom:1px solid #9B88FF; }
-
-  /* ── Float on income accounts ── */
-  .float-row { display:flex; align-items:center; gap:10px; padding:8px 0; }
-  .float-status { display:flex; align-items:center; gap:6px; }
-  .float-bar { height:4px; border-radius:2px; background:#1A2E4A; overflow:hidden; flex:1; min-width:60px; }
-  .float-fill { height:100%; border-radius:2px; transition:width .4s ease; }
-
-  /* ── Investment tab ── */
-  .invest-tab-hero { background:#111E33; border:1px solid #1A2E4A; border-radius:16px; padding:24px 20px; margin:0 16px 16px; }
-  .invest-total-label { font-size:10px; font-weight:600; letter-spacing:2px; text-transform:uppercase; color:#2E4A6A; margin-bottom:8px; }
-  .invest-total-val { font-family:'Space Grotesk',monospace; font-size:52px; font-weight:700; color:#00D4AA; line-height:1; }
-  .invest-total-sub { font-size:12px; color:#4A6280; margin-top:6px; }
-  .holding-list { padding:0 16px; display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
-  .holding-card { background:#111E33; border:1px solid #1A2E4A; border-radius:14px; padding:16px 18px; display:flex; justify-content:space-between; align-items:center; }
-  .holding-label { font-size:14px; font-weight:500; color:#C8D8E8; }
-  .holding-last4  { font-size:12px; color:#4A6280; margin-top:2px; }
-  .holding-bal    { font-family:'Space Grotesk',monospace; font-size:18px; font-weight:600; color:#00D4AA; }
-`;
-
-// ─── Rank dot colors ──────────────────────────────────────────────────────────
-
-const RANK_COLORS = ["#00D4AA", "#9B88FF", "#F5C842", "#F5A623"];
-function rankColor(r) { return RANK_COLORS[r % RANK_COLORS.length]; }
-
-// ─── Icons ────────────────────────────────────────────────────────────────────
-
-const IconDashboard = () => (
-  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-    <rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
-  </svg>
-);
-const IconBills = () => (
-  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-    <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/>
-  </svg>
-);
-const IconPlanner = () => (
-  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/>
-    <path d="M8 14h.01M12 14h.01M8 18h.01M12 18h.01"/>
-  </svg>
-);
-const IconRoadmap = () => (
-  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-    <circle cx="12" cy="9" r="2.5"/>
-  </svg>
-);
-
-const IconAccounts = () => (
-  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="9" cy="7" r="4"/>
-    <path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/>
-    <path d="M16 3.13a4 4 0 010 7.75"/>
-    <path d="M21 21v-2a4 4 0 00-3-3.87"/>
-  </svg>
-);
-
-const IconInvest = () => (
-  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-    {/* body */}
-    <path d="M20.5 11c0-4.14-3.58-7.5-8-7.5S4.5 6.86 4.5 11c0 1.64.55 3.16 1.47 4.41L5 18h2l.75 2h3l.5-2h1.5l.5 2h3L17 18h1.5l-.97-2.59A7.44 7.44 0 0020.5 11z"/>
-    {/* coin slot */}
-    <line x1="12.5" y1="5" x2="12.5" y2="7.5"/>
-    {/* eye */}
-    <circle cx="16" cy="10.5" r="0.9" fill="currentColor" stroke="none"/>
-    {/* ear / snout */}
-    <ellipse cx="8" cy="12" rx="1.5" ry="1" strokeWidth="1.4"/>
-    {/* tail */}
-    <path d="M20.5 10.5c1.2-.2 2 .4 2 1.2s-.8 1.3-2 1.1" strokeWidth="1.4"/>
-  </svg>
-);
-
-const IconHome = () => (
-  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/><path d="M9 21V12h6v9"/>
-  </svg>
-);
-const IconHistory = () => (
-  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/>
-  </svg>
-);
-const IconSettings = () => (
-  <svg className="nav-icon" viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="3"/>
-    <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/>
-  </svg>
-);
-
-// ─── HomeScreen ───────────────────────────────────────────────────────────────
-
-// ─── SpendingScreen (replaces HomeScreen) ────────────────────────────────────
-
-function SpendingScreen({ accounts, snapshots, safeToSpend, residuals, thresholds,
-                          thresholdMode, heroKey, smsText, setSmsText, smsResult,
-                          onParseSMS, onConfirmCard, manualAcct, setManualAcct,
-                          manualBal, setManualBal, onManualSave,
-                          latestBalance, firstBalance, dueThresholds }) {
-
-  const spendingBanks = accounts.filter(a => a.role === "spending_bank").sort((a,b)=>(a.incomeRank??99)-(b.incomeRank??99));
-  const creditCards   = accounts.filter(a => a.role === "credit_card");
-  const today = new Date().toLocaleDateString("en-US",{weekday:"long",month:"long",day:"numeric"});
-
-  const primaryStart = spendingBanks[0] ? firstBalance(spendingBanks[0].last4) : null;
-  const heroCol = bandColor(safeToSpend, thresholds, thresholdMode, primaryStart);
-
-  const totalBank = spendingBanks.reduce((s,a)=>s+(latestBalance(a.last4)??0),0);
-  const totalCards = creditCards.reduce((s,a)=>s+(latestBalance(a.last4)??0),0);
-
+function GameLog({ entries, t }) {
   return (
-    <div className="screen">
-      <div className="header">
-        <div className="header-label">Safe2Spend</div>
-        <div className="header-date">{today}</div>
-      </div>
-
-      {/* Hero */}
-      <div className="hero">
-        <div className="hero-eyebrow">Safe to spend</div>
-        <div key={heroKey} className="hero-amount anim" style={{color:heroCol}}>
-          {fmtShort(safeToSpend)}
-        </div>
-        <div className="hero-sub">
-          {safeToSpend === null ? "Add a spending account to get started"
-           : safeToSpend >= 0  ? "Your bills are paid — this is yours to spend"
-           : "Credit card balances exceed your spending accounts"}
-        </div>
-      </div>
-
-      {/* Thin waterfall strip */}
-      {spendingBanks.length > 0 && totalBank > 0 && (
-        <div className="waterfall-strip">
-          {spendingBanks.map(a => {
-            const bal = latestBalance(a.last4) ?? 0;
-            const start = firstBalance(a.last4);
-            const res = residuals[a.last4] ?? 0;
-            const col = bandColor(res, thresholds, thresholdMode, start);
-            return <div key={a.last4} className="waterfall-seg" style={{flex:bal,background:col,opacity:0.85}}/>;
-          })}
-        </div>
-      )}
-
-      <div className="divider"/>
-
-      {/* Spending bank accounts */}
-      {spendingBanks.length > 0 && (
-        <>
-          <div className="section-label">Your Money</div>
-          <div className="account-list">
-            {spendingBanks.map(a => {
-              const bal = latestBalance(a.last4);
-              const res = residuals[a.last4] ?? null;
-              const start = firstBalance(a.last4);
-              const col = bandColor(res, thresholds, thresholdMode, start);
-              return (
-                <div className={`account-card rank-${a.incomeRank}`} key={a.last4}>
-                  <div className="account-card-left">
-                    <div className="acct-rank-dot" style={{background:rankColor(a.incomeRank)}}/>
-                    <div>
-                      <div className="account-label">{a.label}</div>
-                      <div className="account-last4">•••• {a.last4}</div>
-                    </div>
-                  </div>
-                  <div style={{textAlign:"right"}}>
-                    {bal !== null
-                      ? <div className="account-balance" style={{color:col}}>{fmt(bal)}</div>
-                      : <div className="account-balance no-data">No balance</div>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {/* Credit cards */}
-      {creditCards.length > 0 && (
-        <>
-          <div className="section-label">Credit Cards</div>
-          <div className="account-list">
-            {creditCards.map(a => {
-              const bal = latestBalance(a.last4);
-              const days = daysUntilDue(a.dueDay);
-              const dateStr = nextDueDateStr(a.dueDay);
-              const dc = dueColor(days, dueThresholds);
-              return (
-                <div className="account-card" key={a.last4}
-                  style={{borderLeft: dc ? `3px solid ${dc}` : "1px solid #1A2E4A", paddingLeft: dc ? 15 : 17}}>
-                  <div className="account-card-left">
-                    <div>
-                      <div className="account-label">{a.label}</div>
-                      <div className="account-last4">•••• {a.last4}</div>
-                      {dateStr
-                        ? <span className="rank-badge" style={{background:dc?dc+"20":"#1A2E4A",color:dc??"#4A6280",marginTop:4}}>
-                            Due {dateStr}{days!==null && ` · ${days}d`}
-                          </span>
-                        : <span className="rank-badge" style={{background:"#1A2E4A",color:"#2E4A6A"}}>No due date</span>}
-                    </div>
-                  </div>
-                  {bal !== null
-                    ? <div className="account-balance">{fmt(bal)}</div>
-                    : <div className="account-balance no-data">No balance</div>}
-                </div>
-              );
-            })}
-          </div>
-          <div style={{padding:"0 24px",marginBottom:20,display:"flex",justifyContent:"space-between"}}>
-            <span style={{fontSize:12,color:"#4A6280"}}>Total on cards</span>
-            <span style={{fontFamily:"'Space Grotesk',monospace",fontSize:14,fontWeight:600,color:"#F5A623"}}>{fmt(totalCards)}</span>
-          </div>
-        </>
-      )}
-
-      {/* SMS Paste */}
-      <div className="section-label">Paste SMS Alert</div>
-      <div className="sms-panel">
-        <div className="sms-panel-title">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9B88FF" strokeWidth="2" strokeLinecap="round">
-            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
-          </svg>
-          Bank SMS
-        </div>
-        <textarea className="sms-textarea"
-          placeholder={"Paste a balance alert, e.g.:\nAcct *1234 balance: $4,000.00"}
-          value={smsText} onChange={e=>setSmsText(e.target.value)}/>
-        <button className="sms-parse-btn" onClick={onParseSMS}>Parse & Save Balance</button>
-        {smsResult && smsResult.ok === "confirm" ? (
-          <div className="sms-result" style={{background:"#9B88FF14",color:"#C8D8E8"}}>
-            <div style={{marginBottom:10}}>{smsResult.msg}</div>
-            <select className="select-input" style={{marginBottom:8}} defaultValue=""
-              onChange={e=>e.target.value&&onConfirmCard(e.target.value,smsResult.balance)}>
-              <option value="" disabled>Select account…</option>
-              {accounts.map(a=><option key={a.last4} value={a.last4}>{a.label} (•{a.last4})</option>)}
-            </select>
-          </div>
-        ) : smsResult ? (
-          <div className={`sms-result ${smsResult.ok?"success":"error"}`}>{smsResult.msg}</div>
-        ) : null}
-      </div>
-
-      {/* Manual entry */}
-      <div className="section-label">Manual Entry</div>
-      <div className="manual-panel">
-        <div className="manual-title">Enter Balance Manually</div>
-        <select className="select-input" value={manualAcct} onChange={e=>setManualAcct(e.target.value)}>
-          <option value="">Select account…</option>
-          {accounts.map(a=><option key={a.last4} value={a.last4}>{a.label} (•{a.last4})</option>)}
-        </select>
-        <div className="input-row">
-          <input className="text-input" placeholder="0.00" value={manualBal}
-            onChange={e=>setManualBal(e.target.value)} type="number" inputMode="decimal"/>
-          <button className="add-btn" onClick={onManualSave}>Save</button>
-        </div>
-      </div>
+    <div style={{
+      maxHeight:110, overflowY:"auto",
+      background: t.logBg, border:`1px solid ${t.logBorder}`,
+      borderRadius:8, padding:"8px 12px",
+      fontFamily:"monospace", fontSize:12, color:t.logText,
+      display:"flex", flexDirection:"column-reverse", gap:2,
+    }}>
+      {entries.length===0
+        ? <span style={{color:t.textDim}}>Game log will appear here…</span>
+        : entries.map((e,i)=><div key={i}>{e}</div>)
+      }
     </div>
   );
 }
 
-
-function HistoryScreen({ snapshots, accounts }) {
-  const sorted = [...snapshots].sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+function Die({ value, rolling, t }) {
+  const dots = getDotPositions(value||1);
   return (
-    <div className="screen">
-      <div className="screen-title">Balance History</div>
-      {sorted.length === 0
-        ? <div className="history-empty">No history yet.<br/>Paste an SMS or enter a balance manually.</div>
-        : <div className="history-list">
-            {sorted.map(s => {
-              const acct = accounts.find(a => a.last4 === s.accountLast4);
-              return (
-                <div className="history-item" key={s.id}>
-                  <div>
-                    <div className="history-account">{acct ? acct.label : "Acct"} •{s.accountLast4}</div>
-                    <div className="history-time">{fmtTime(s.timestamp)}</div>
-                    <span className={`history-source src-${s.source}`}>{SOURCES[s.source]}</span>
-                  </div>
-                  <div className="history-balance">{fmt(s.balance)}</div>
-                </div>
-              );
-            })}
-          </div>}
+    <div style={{
+      width:60, height:60, flexShrink:0, position:"relative",
+      background: t.dieBg, border:`3px solid ${t.dieBorder}`, borderRadius:12,
+      boxShadow: rolling ? t.dieRollShadow : "inset 0 2px 4px rgba(255,255,255,0.15), 0 4px 8px rgba(0,0,0,0.4)",
+      transition:"box-shadow 0.15s",
+      animation: rolling ? "dieSpin 0.35s ease-out" : "none",
+    }}>
+      {dots.map(([x,y],i)=>(
+        <div key={i} style={{
+          position:"absolute", width:9, height:9, borderRadius:"50%",
+          background: t.diePip,
+          left:`calc(${x}% - 4.5px)`, top:`calc(${y}% - 4.5px)`,
+        }}/>
+      ))}
     </div>
   );
 }
 
-// ─── SettingsScreen ───────────────────────────────────────────────────────────
+function TileEl({ number, state, onClick, selectable, selected, t }) {
+  const isClosed = state==="closed", isCursed = state==="cursed";
+  let bg=t.tileBg, color=t.tileText, border=`2px solid ${t.tileBorder}`;
+  let opacity=1, shadow="0 3px 6px rgba(0,0,0,0.35)";
 
-
-// ─── Export / Import Engine ───────────────────────────────────────────────────
-
-// Column headers — widest record type wins (Bills has most columns)
-const CSV_HEADERS = [
-  "Type","id","last4","label","role","rank","dueDay","floatEnabled","floatMultiplier",
-  "balance","timestamp","source",
-  "name","amount","frequency","myPct","theirPct","fundingAcct","paymentAcct",
-  "creditCard","isFixed","isAutopay","isEF","isRetire","rewardMult","notes",
-  "netPay","status","completedAt",
-  "current","goal","targetType","targetDate","targetAge",
-  "hi","mid","lo","mode","threshType"
-];
-
-function escapeCSV(val) {
-  if (val === null || val === undefined) return "";
-  const s = String(val);
-  if (s.includes(",") || s.includes('"') || s.includes("\n")) {
-    return '"' + s.replace(/"/g, '""') + '"';
+  if (isClosed) {
+    bg=t.tileClosedBg; color=t.tileClosedBg; border=`2px solid ${t.tileClosedBorder}`;
+    shadow="inset 0 2px 4px rgba(0,0,0,0.5)"; opacity=0.5;
   }
-  return s;
-}
-
-function rowToCSV(obj) {
-  return CSV_HEADERS.map(h => escapeCSV(obj[h] ?? "")).join(",");
-}
-
-function buildExportRows(accounts, snapshots, bills, paycheck, billsOverride,
-                          roadmap, investments, thresholds, thresholdMode,
-                          dueThresholds, investThresholds) {
-  const rows = [];
-
-  // ACCOUNTS
-  accounts.forEach(a => {
-    rows.push({
-      Type:"ACCOUNT", last4:a.last4, label:a.label, role:a.role,
-      rank:a.incomeRank??"", dueDay:a.dueDay??"",
-      floatEnabled:a.floatEnabled??"", floatMultiplier:a.floatMultiplier??""
-    });
-  });
-
-  // SNAPSHOTS — only most recent per account
-  const latestSnaps = {};
-  snapshots.forEach(s => {
-    const existing = latestSnaps[s.accountLast4];
-    if (!existing || new Date(s.timestamp) > new Date(existing.timestamp)) {
-      latestSnaps[s.accountLast4] = s;
-    }
-  });
-  Object.values(latestSnaps).forEach(s => {
-    rows.push({
-      Type:"SNAPSHOT", last4:s.accountLast4, balance:s.balance,
-      timestamp:s.timestamp, source:s.source
-    });
-  });
-
-  // BILLS
-  bills.forEach(b => {
-    rows.push({
-      Type:"BILL", id:b.id, name:b.name, amount:b.amount,
-      frequency:b.frequency, myPct:b.myPct, theirPct:b.theirPct,
-      fundingAcct:b.fundingAcct, paymentAcct:b.paymentAcct,
-      creditCard:b.creditCard, dueDay:b.dueDay??"",
-      isFixed:b.isFixed, isAutopay:b.isAutopay,
-      isEF:b.isEF, isRetire:b.isRetire,
-      rewardMult:b.rewardMult, notes:b.notes
-    });
-  });
-
-  // PAYCHECK
-  rows.push({
-    Type:"PAYCHECK", netPay:paycheck?.netPay??"", frequency:paycheck?.frequency??""
-  });
-
-  // BILLS_OVERRIDE (pay settings override on Bills tab)
-  if (billsOverride) {
-    rows.push({
-      Type:"BILLS_OVERRIDE", netPay:billsOverride.netPay??"",
-      frequency:billsOverride.frequency??""
-    });
+  if (isCursed) {
+    bg=t.tileCursedBg; color=t.tileCursedText; border=`2px solid ${t.tileCursedBorder}`;
+    shadow=`0 0 8px ${t.danger}66`; opacity=0.85;
   }
-
-  // ROADMAP
-  roadmap.forEach(r => {
-    rows.push({
-      Type:"ROADMAP", id:r.id, name:r.label,
-      status:r.status, completedAt:r.completedAt??""
-    });
-  });
-
-  // INVESTMENTS
-  investments.forEach(inv => {
-    rows.push({
-      Type:"INVEST", id:inv.id, name:inv.name,
-      current:inv.current, goal:inv.goal,
-      targetType:inv.targetType, targetDate:inv.targetDate??"",
-      targetAge:inv.targetAge??"", notes:inv.notes??""
-    });
-  });
-
-  // THRESHOLDS
-  rows.push({ Type:"THRESHOLD", threshType:"spending", hi:thresholds?.hi,         mid:thresholds?.mid,         lo:thresholds?.lo,         mode:thresholdMode||"percent" });
-  rows.push({ Type:"THRESHOLD", threshType:"due",      hi:dueThresholds?.green,    mid:dueThresholds?.yellow,   lo:dueThresholds?.red,     mode:"days" });
-  rows.push({ Type:"THRESHOLD", threshType:"invest",   hi:investThresholds?.green, mid:investThresholds?.yellow,lo:investThresholds?.red,  mode:"percent" });
-
-  return rows;
-}
-
-function exportToCSV(args) {
-  const rows = buildExportRows(...args);
-  const header = CSV_HEADERS.join(",");
-  const body   = rows.map(rowToCSV).join("\n");
-  const csv    = header + "\n" + body;
-  const blob   = new Blob([csv], { type:"text/csv;charset=utf-8;" });
-  const url    = URL.createObjectURL(blob);
-  const a      = document.createElement("a");
-  a.href       = url;
-  a.download   = `safe2spend_${new Date().toISOString().slice(0,10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-}
-
-// ── Parse uploaded file (CSV or XLSX via SheetJS) ─────────────────────────────
-
-function parseCSVText(text) {
-  // Simple CSV parser that handles quoted fields
-  const lines = text.trim().split("\n");
-  if (lines.length < 2) return [];
-  const headers = parseCSVLine(lines[0]);
-  return lines.slice(1).map(line => {
-    const vals = parseCSVLine(line);
-    const obj = {};
-    headers.forEach((h, i) => { obj[h.trim()] = (vals[i] ?? "").trim(); });
-    return obj;
-  }).filter(r => r.Type);
-}
-
-function parseCSVLine(line) {
-  const result = [];
-  let cur = "", inQuote = false;
-  for (let i = 0; i < line.length; i++) {
-    const c = line[i];
-    if (c === '"') {
-      if (inQuote && line[i+1] === '"') { cur += '"'; i++; }
-      else inQuote = !inQuote;
-    } else if (c === "," && !inQuote) {
-      result.push(cur); cur = "";
-    } else {
-      cur += c;
-    }
-  }
-  result.push(cur);
-  return result;
-}
-
-function parseBool(v) {
-  if (v === "" || v === undefined || v === null) return undefined;
-  return v === "true" || v === "TRUE" || v === "1";
-}
-
-function parseNum(v) {
-  const n = parseFloat(v);
-  return isNaN(n) ? null : n;
-}
-
-function importFromRows(rows, callbacks) {
-  const {
-    setAccounts, setSnapshots, setBills, setPaycheck,
-    setBillsOverride, setRoadmap, setInvestments,
-    setThresholds, setThresholdMode, setDueThresholds, setInvestThresholds
-  } = callbacks;
-
-  // Group rows by type
-  const byType = {};
-  rows.forEach(r => {
-    const t = r.Type?.trim().toUpperCase();
-    if (!t) return;
-    if (!byType[t]) byType[t] = [];
-    byType[t].push(r);
-  });
-
-  // ACCOUNTS
-  if (byType.ACCOUNT) {
-    const accounts = byType.ACCOUNT.map((r, i) => ({
-      last4:        r.last4?.trim(),
-      label:        r.label?.trim() || "Account",
-      role:         r.role?.trim()  || "spending_bank",
-      incomeRank:   r.rank !== "" ? parseInt(r.rank) : null,
-      dueDay:       r.dueDay !== "" ? parseInt(r.dueDay) : null,
-      floatEnabled: r.floatEnabled !== "" ? parseBool(r.floatEnabled) : undefined,
-      floatMultiplier: r.floatMultiplier !== "" ? parseNum(r.floatMultiplier) : undefined,
-    })).filter(a => a.last4);
-    setAccounts(accounts);
-  }
-
-  // SNAPSHOTS
-  if (byType.SNAPSHOT) {
-    const snaps = byType.SNAPSHOT.map((r, i) => ({
-      id:           Date.now() + i,
-      accountLast4: r.last4?.trim(),
-      balance:      parseNum(r.balance) ?? 0,
-      timestamp:    r.timestamp?.trim() || new Date().toISOString(),
-      source:       r.source?.trim() || "manual",
-    })).filter(s => s.accountLast4);
-    setSnapshots(snaps);
-  }
-
-  // BILLS
-  if (byType.BILL) {
-    const bills = byType.BILL.map(r => ({
-      id:          parseNum(r.id) || Date.now(),
-      name:        r.name?.trim() || "",
-      amount:      r.amount?.trim() || "",
-      frequency:   r.frequency?.trim() || "monthly",
-      myPct:       r.myPct?.trim() || "100",
-      theirPct:    r.theirPct?.trim() || "0",
-      fundingAcct: r.fundingAcct?.trim() || "",
-      paymentAcct: r.paymentAcct?.trim() || "",
-      creditCard:  r.creditCard?.trim() || "",
-      dueDay:      r.dueDay !== "" ? parseInt(r.dueDay) : null,
-      isFixed:     parseBool(r.isFixed) ?? true,
-      isAutopay:   parseBool(r.isAutopay) ?? false,
-      isEF:        parseBool(r.isEF) ?? false,
-      isRetire:    parseBool(r.isRetire) ?? false,
-      rewardMult:  r.rewardMult?.trim() || "",
-      notes:       r.notes?.trim() || "",
-    }));
-    setBills(bills);
-  }
-
-  // PAYCHECK
-  if (byType.PAYCHECK?.[0]) {
-    const r = byType.PAYCHECK[0];
-    setPaycheck({ netPay: r.netPay?.trim() || "", frequency: r.frequency?.trim() || "biweekly" });
-  }
-
-  // BILLS_OVERRIDE
-  if (byType.BILLS_OVERRIDE?.[0]) {
-    const r = byType.BILLS_OVERRIDE[0];
-    setBillsOverride({ netPay: r.netPay?.trim() || "", frequency: r.frequency?.trim() || "biweekly" });
-  }
-
-  // ROADMAP
-  if (byType.ROADMAP) {
-    const roadmap = byType.ROADMAP.map(r => ({
-      id:          parseNum(r.id) || Date.now(),
-      label:       r.name?.trim() || "",
-      status:      r.status?.trim() || "future",
-      completedAt: r.completedAt?.trim() || undefined,
-    }));
-    setRoadmap(roadmap);
-  }
-
-  // INVESTMENTS
-  if (byType.INVEST) {
-    const investments = byType.INVEST.map(r => ({
-      id:         parseNum(r.id) || Date.now(),
-      name:       r.name?.trim() || "",
-      current:    r.current?.trim() || "",
-      goal:       r.goal?.trim() || "",
-      targetType: r.targetType?.trim() || "date",
-      targetDate: r.targetDate?.trim() || "",
-      targetAge:  r.targetAge?.trim() || "",
-      notes:      r.notes?.trim() || "",
-    }));
-    setInvestments(investments);
-  }
-
-  // THRESHOLDS
-  if (byType.THRESHOLD) {
-    byType.THRESHOLD.forEach(r => {
-      const t = r.threshType?.trim().toLowerCase();
-      if (t === "spending") {
-        setThresholds({ hi: r.hi, mid: r.mid, lo: r.lo });
-        setThresholdMode(r.mode?.trim() || "percent");
-      } else if (t === "due") {
-        setDueThresholds({ green: r.hi, yellow: r.mid, red: r.lo });
-      } else if (t === "invest") {
-        setInvestThresholds({ green: r.hi, yellow: r.mid, red: r.lo });
-      }
-    });
-  }
-}
-
-// ── ExportImport UI component ─────────────────────────────────────────────────
-
-function ExportImportPanel({ exportArgs, importCallbacks, showToast }) {
-  const [importing, setImporting]   = useState(false);
-  const [importMsg, setImportMsg]   = useState(null);
-  const fileRef = React.useRef();
-
-  function handleExport() {
-    try {
-      exportToCSV(exportArgs);
-      showToast("Exported — check your downloads");
-    } catch(e) {
-      showToast("Export failed");
-      console.error(e);
-    }
-  }
-
-  function handleFileChange(e) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImporting(true);
-    setImportMsg(null);
-    const ext = file.name.split(".").pop().toLowerCase();
-
-    if (ext === "csv") {
-      const reader = new FileReader();
-      reader.onload = ev => {
-        try {
-          const rows = parseCSVText(ev.target.result);
-          importFromRows(rows, importCallbacks);
-          setImportMsg({ ok:true, msg:`Imported ${rows.length} rows. App updated.` });
-          showToast("Data imported ✓");
-        } catch(err) {
-          setImportMsg({ ok:false, msg:"Failed to parse CSV: " + err.message });
-        }
-        setImporting(false);
-        e.target.value = "";
-      };
-      reader.readAsText(file);
-    } else if (ext === "xlsx" || ext === "xls") {
-      // SheetJS loaded via <script> tag in index.html — available as window.XLSX
-      if (!window.XLSX) {
-        setImportMsg({ ok:false, msg:"XLSX library not loaded yet. Try again in a moment." });
-        setImporting(false);
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = ev => {
-        try {
-          const XLSX = window.XLSX;
-          const wb   = XLSX.read(ev.target.result, { type:"array" });
-          const ws   = wb.Sheets[wb.SheetNames[0]];
-          const data = XLSX.utils.sheet_to_json(ws, { defval:"" });
-          importFromRows(data, importCallbacks);
-          setImportMsg({ ok:true, msg:`Imported ${data.length} rows from ${file.name}.` });
-          showToast("Data imported ✓");
-          setImporting(false);
-          e.target.value = "";
-        } catch(err) {
-          setImportMsg({ ok:false, msg:"Failed to parse XLSX: " + err.message });
-          setImporting(false);
-        }
-      };
-      reader.readAsArrayBuffer(file);
-    } else {
-      setImportMsg({ ok:false, msg:"Please upload a .csv or .xlsx file." });
-      setImporting(false);
-    }
+  if (selected) {
+    bg=t.tileSelBg; color=t.tileSelText; border=`2px solid ${t.tileSelBorder}`;
+    shadow=t.tileSelShadow; opacity=1;
+  } else if (selectable && !isClosed && !isCursed) {
+    shadow=`0 3px 10px ${t.accent}44`;
   }
 
   return (
-    <div style={{background:"#0D1F35",border:"1px solid #1A3A5A",borderRadius:14,padding:18,margin:"0 16px 24px"}}>
-      <div style={{fontSize:10,fontWeight:600,letterSpacing:"2px",textTransform:"uppercase",color:"#2E4A6A",marginBottom:14}}>
-        Export / Import
-      </div>
+    <div onClick={()=>selectable&&onClick(number)} style={{
+      width:46, height:54, display:"flex", alignItems:"center", justifyContent:"center",
+      background:bg, border, borderRadius:8, cursor:selectable?"pointer":"default",
+      boxShadow:shadow, opacity, transition:"all 0.18s", position:"relative", userSelect:"none",
+    }}>
+      {!isClosed && (
+        <span style={{fontFamily:"'Georgia',serif",fontWeight:"bold",fontSize:number>=10?15:19,color,lineHeight:1}}>
+          {number}
+        </span>
+      )}
+      {isCursed && <span style={{fontSize:16,position:"absolute",top:2,right:2}}>💀</span>}
+    </div>
+  );
+}
 
-      {/* Export */}
-      <button onClick={handleExport} style={{
-        width:"100%",padding:"12px 16px",borderRadius:10,border:"none",
-        background:"#00D4AA",color:"#0A1628",fontFamily:"'DM Sans',sans-serif",
-        fontSize:14,fontWeight:700,cursor:"pointer",marginBottom:10,textAlign:"left"
-      }}>
-        ↓ Export to CSV
-      </button>
-      <div style={{fontSize:11,color:"#2E4A6A",marginBottom:16,lineHeight:1.5}}>
-        Downloads all your data as a .csv file. Open in Excel or Google Sheets to edit, then re-upload below.
-      </div>
+function EventFaceTag({ face }) {
+  if (!face) return null;
+  return (
+    <div style={{
+      padding:"5px 12px", borderRadius:7,
+      background: FACE_COLORS[face]+"22", border:`2px solid ${FACE_COLORS[face]}`,
+      color:FACE_COLORS[face], fontFamily:"'Georgia',serif", fontWeight:"bold", fontSize:13,
+    }}>{FACE_LABELS[face]}</div>
+  );
+}
 
-      {/* Import */}
-      <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls"
-        style={{display:"none"}} onChange={handleFileChange}/>
-      <button onClick={()=>fileRef.current?.click()} disabled={importing} style={{
-        width:"100%",padding:"12px 16px",borderRadius:10,border:"1px solid #1A3A5A",
-        background:"#1A2E4A",color:"#C8D8E8",fontFamily:"'DM Sans',sans-serif",
-        fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:6,textAlign:"left",
-        opacity:importing?0.6:1
-      }}>
-        {importing ? "Importing…" : "↑ Import CSV or XLSX"}
-      </button>
-      <div style={{fontSize:11,color:"#2E4A6A",marginBottom:importMsg?10:0,lineHeight:1.5}}>
-        Replaces all current data. Export first as a backup before importing.
-      </div>
-
-      {importMsg && (
-        <div style={{
-          padding:"10px 12px",borderRadius:8,fontSize:12,marginTop:4,
-          background: importMsg.ok ? "#00D4AA12" : "#FF6B6B12",
-          color:      importMsg.ok ? "#00D4AA"   : "#FF6B6B"
+function DiePickRow({ dice, onPick, choice, showAs, t }) {
+  return (
+    <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+      {[0,1].map(i=>(
+        <button key={i} onClick={()=>onPick(i)} style={{
+          padding:"9px 18px", borderRadius:8, cursor:"pointer",
+          fontFamily:"'Georgia',serif", fontWeight:"bold", fontSize:13,
+          background: choice===i ? t.accentDim : t.surface,
+          border:`2px solid ${choice===i ? t.accent : t.surfaceBorder}`,
+          color: choice===i ? t.textBright : t.textMid,
+          transition:"all 0.15s",
         }}>
-          {importMsg.msg}
-        </div>
-      )}
+          Die {i+1}: {dice[i]} → {showAs(i)}
+        </button>
+      ))}
     </div>
   );
 }
 
+// ─── Root ─────────────────────────────────────────────────────────────────────
 
-function SettingsScreen({ thresholds, thresholdMode,
-                          dueThresholds, investThresholds,
-                          onSaveThresholds, onSaveThresholdMode,
-                          onSaveDueThresholds, onSaveInvestThresholds,
-                          snapshots, accounts, bills, paycheck, billsOverride,
-                          roadmap, investments,
-                          setAccounts, setSnapshots, setBills, setPaycheck,
-                          setBillsOverride, setRoadmap, setInvestments,
-                          setThresholds, setThresholdMode,
-                          setDueThresholds, setInvestThresholds,
-                          showToast }) {
-  const [tHi,  setTHi]  = useState(thresholds?.hi  ?? "60");
-  const [tMid, setTMid] = useState(thresholds?.mid ?? "30");
-  const [tLo,  setTLo]  = useState(thresholds?.lo  ?? "15");
-  const [tMode, setTMode] = useState(thresholdMode ?? "percent");
-  const [dGreen,  setDGreen]  = useState(dueThresholds?.green  ?? "14");
-  const [dYellow, setDYellow] = useState(dueThresholds?.yellow ?? "7");
-  const [dRed,    setDRed]    = useState(dueThresholds?.red    ?? "3");
-  const [iGreen,  setIGreen]  = useState(investThresholds?.green  ?? "75");
-  const [iYellow, setIYellow] = useState(investThresholds?.yellow ?? "40");
-  const [iRed,    setIRed]    = useState(investThresholds?.red    ?? "10");
+export default function App() {
+  const [screen, setScreen] = useState("setup");
+  const [config, setConfig] = useState(null);
 
-  function handleSave() {
-    onSaveThresholds?.({ hi: tHi, mid: tMid, lo: tLo });
-    onSaveThresholdMode?.(tMode);
-    onSaveDueThresholds?.({ green: dGreen, yellow: dYellow, red: dRed });
-    onSaveInvestThresholds?.({ green: iGreen, yellow: iYellow, red: iRed });
+  function handleStart(cfg) { setConfig(cfg); setScreen("playing"); }
+  function handleMenu()     { setScreen("setup"); setConfig(null); }
+
+  if (screen==="setup") return <SetupScreen onStart={handleStart}/>;
+  return <GameScreen config={config} onMenu={handleMenu}/>;
+}
+
+// ─── Setup Screen ─────────────────────────────────────────────────────────────
+
+function SetupScreen({ onStart }) {
+  const [themeId,     setThemeId]     = useState("classic");
+  const [mode,        setMode]        = useState(MODE.SOLO);
+  const [numPlayers,  setNumPlayers]  = useState(2);
+  const [names,       setNames]       = useState(["","","",""]);
+  const [preset,      setPreset]      = useState("full");
+  const [custom,      setCustom]      = useState([1,2,3,4,5,6,7,8,9,10,11,12]);
+
+  const t = THEMES[themeId];
+  const maxP = mode===MODE.SUDDEN ? 2 : mode===MODE.SOLO ? 1 : 4;
+  const actualNum = mode===MODE.SOLO ? 1 : Math.min(Math.max(numPlayers,2), maxP);
+  const activeTiles = preset==="custom" ? custom : BOARD_PRESETS[preset].tiles;
+
+  function toggleCustom(n) {
+    setCustom(prev => prev.includes(n)
+      ? (prev.length<=6 ? prev : prev.filter(x=>x!==n))
+      : [...prev,n].sort((a,b)=>a-b));
+  }
+  function updateName(i,v) { const n=[...names]; n[i]=v; setNames(n); }
+  function handleStart() {
+    const players = Array.from({length:actualNum},(_,i)=>names[i].trim()||(mode===MODE.SOLO?"You":`Player ${i+1}`));
+    onStart({themeId,mode,players,activeTiles});
   }
 
-  const unit = tMode === "percent" ? "%" : "$";
-  const placeholder = tMode === "percent"
-    ? ["e.g. 60", "e.g. 30", "e.g. 15"]
-    : ["e.g. 2000", "e.g. 1000", "e.g. 500"];
+  const MODES = [
+    {id:MODE.SOLO,    label:"Solo",         desc:"Play alone. Close all tiles for a perfect score."},
+    {id:MODE.LOWEST,  label:"Lowest Score", desc:"Each player gets their own board. Pass when ready. Fewest open tiles wins."},
+    {id:MODE.SUDDEN,  label:"Sudden Death", desc:"Share one board. Player who gets stuck is eliminated."},
+  ];
 
-  if (!thresholds || !dueThresholds || !investThresholds) {
+  return (
+    <div style={{
+      minHeight:"100dvh", background:t.bgGrad, overflowY:"auto",
+      display:"flex", flexDirection:"column", alignItems:"center",
+      justifyContent:"center", padding:"24px 16px 40px",
+      fontFamily:"'Georgia',serif",
+    }}>
+      <style>{`@keyframes cIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}`}</style>
+
+      {/* Title */}
+      <div style={{textAlign:"center",marginBottom:24,animation:"cIn 0.4s ease"}}>
+        <div style={{fontSize:11,letterSpacing:4,color:t.textMid,textTransform:"uppercase",marginBottom:6}}>Dice Game</div>
+        <h1 style={{margin:0,fontSize:38,fontWeight:"bold",color:t.titleColor,textShadow:"0 2px 12px rgba(0,0,0,0.7)"}}>
+          Flip the Box
+        </h1>
+        <div style={{width:80,height:2,background:`linear-gradient(90deg,transparent,${t.accent},transparent)`,margin:"10px auto 0"}}/>
+      </div>
+
+      <div style={{width:"100%",maxWidth:420,display:"flex",flexDirection:"column",gap:16}}>
+
+        {/* Theme */}
+        <Section label="Theme" t={t}>
+          <div style={{display:"flex",gap:8}}>
+            {Object.entries(THEMES).map(([id,th])=>(
+              <div key={id} onClick={()=>setThemeId(id)} style={{
+                flex:1, padding:"10px 8px", borderRadius:10, cursor:"pointer", textAlign:"center",
+                background: themeId===id ? th.accentDim : t.surface,
+                border:`2px solid ${themeId===id ? th.accent : t.surfaceBorder}`,
+                boxShadow: themeId===id ? `0 0 10px ${th.accent}44` : "none",
+                transition:"all 0.15s",
+              }}>
+                <div style={{width:18,height:18,borderRadius:4,background:th.bgGrad,border:`2px solid ${th.accent}`,margin:"0 auto 5px",boxShadow:`0 0 6px ${th.accent}66`}}/>
+                <div style={{color:themeId===id?th.accent:t.textMid,fontWeight:"bold",fontSize:12}}>{th.label}</div>
+                <div style={{color:t.textDim,fontSize:10,marginTop:1}}>{th.desc}</div>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        {/* Mode */}
+        <Section label="Game Mode" t={t}>
+          <div style={{display:"flex",flexDirection:"column",gap:7}}>
+            {MODES.map(({id,label,desc})=>(
+              <div key={id} onClick={()=>{setMode(id);if(id===MODE.SUDDEN)setNumPlayers(2);if(id===MODE.SOLO)setNumPlayers(1);}} style={{
+                padding:"11px 13px", borderRadius:10, cursor:"pointer",
+                background: mode===id ? t.accentDim : t.surface,
+                border:`2px solid ${mode===id ? t.accent : t.surfaceBorder}`,
+                display:"flex", alignItems:"flex-start", gap:10, transition:"all 0.15s",
+              }}>
+                <div style={{
+                  width:15,height:15,borderRadius:"50%",flexShrink:0,marginTop:2,
+                  border:`2px solid ${mode===id?t.accent:t.textDim}`,
+                  background:mode===id?t.accent:"transparent",transition:"all 0.15s",
+                }}/>
+                <div>
+                  <div style={{color:mode===id?t.textBright:t.textMid,fontWeight:"bold",fontSize:14,marginBottom:2}}>{label}</div>
+                  <div style={{color:t.textDim,fontSize:12,lineHeight:1.4}}>{desc}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Section>
+
+        {/* Players */}
+        {mode!==MODE.SOLO && (
+          <Section label={`Players ${mode===MODE.SUDDEN?"(2)":"(2–4)"}`} t={t}>
+            <div style={{display:"flex",gap:8}}>
+              {Array.from({length:maxP-1},(_,i)=>i+2).map(n=>(
+                <div key={n} onClick={()=>setNumPlayers(n)} style={{
+                  width:44,height:44,borderRadius:8,
+                  cursor:mode===MODE.SUDDEN?"default":"pointer",
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  background:actualNum===n?t.accentDim:t.surface,
+                  border:`2px solid ${actualNum===n?t.accent:t.surfaceBorder}`,
+                  color:actualNum===n?t.textBright:t.textMid,
+                  fontWeight:"bold",fontSize:18,transition:"all 0.15s",
+                }}>{n}</div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Names */}
+        <Section label={mode===MODE.SOLO?"Your Name":"Player Names"} t={t}>
+          <div style={{display:"flex",flexDirection:"column",gap:7}}>
+            {Array.from({length:actualNum},(_,i)=>(
+              <input key={i} type="text"
+                placeholder={mode===MODE.SOLO?"Your name":`Player ${i+1}`}
+                value={names[i]} onChange={e=>updateName(i,e.target.value)} maxLength={16}
+                style={{
+                  padding:"9px 13px", background:"rgba(0,0,0,0.25)",
+                  border:`1px solid ${t.textDim}`, borderRadius:8,
+                  color:t.textBright, fontFamily:"'Georgia',serif", fontSize:15,
+                  outline:"none", width:"100%", boxSizing:"border-box",
+                }}
+              />
+            ))}
+          </div>
+        </Section>
+
+        {/* Board */}
+        <Section label="Board Setup" t={t}>
+          <div style={{display:"flex",gap:8,marginBottom:10}}>
+            {Object.entries(BOARD_PRESETS).map(([id,{label,desc}])=>(
+              <div key={id} onClick={()=>setPreset(id)} style={{
+                flex:1,padding:"9px 7px",borderRadius:8,cursor:"pointer",textAlign:"center",
+                background:preset===id?t.accentDim:t.surface,
+                border:`2px solid ${preset===id?t.accent:t.surfaceBorder}`,
+                transition:"all 0.15s",
+              }}>
+                <div style={{color:preset===id?t.textBright:t.textMid,fontWeight:"bold",fontSize:12}}>{label}</div>
+                <div style={{color:t.textDim,fontSize:10,marginTop:2}}>{desc}</div>
+              </div>
+            ))}
+          </div>
+          {preset==="custom" ? (
+            <div>
+              <div style={{fontSize:11,color:t.textMid,marginBottom:7}}>
+                Tap to toggle — min 6 ({custom.length} selected)
+              </div>
+              <div style={{display:"flex",flexWrap:"wrap",gap:6}}>
+                {Array.from({length:12},(_,i)=>i+1).map(n=>{
+                  const on=custom.includes(n);
+                  return (
+                    <div key={n} onClick={()=>toggleCustom(n)} style={{
+                      width:38,height:44,borderRadius:6,cursor:"pointer",
+                      display:"flex",alignItems:"center",justifyContent:"center",
+                      background:on?t.tileBg:t.surface,
+                      border:`2px solid ${on?t.tileBorder:t.surfaceBorder}`,
+                      color:on?t.tileText:t.textDim,
+                      fontFamily:"'Georgia',serif",fontWeight:"bold",fontSize:15,
+                      opacity:!on&&custom.length<=6?0.35:1,
+                      transition:"all 0.15s",
+                    }}>{n}</div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : (
+            <div style={{display:"flex",flexWrap:"wrap",gap:4}}>
+              {BOARD_PRESETS[preset].tiles.map(n=>(
+                <div key={n} style={{
+                  width:30,height:34,borderRadius:5,
+                  display:"flex",alignItems:"center",justifyContent:"center",
+                  background:t.tileBg,border:`1.5px solid ${t.tileBorder}`,
+                  color:t.tileText,fontFamily:"'Georgia',serif",fontWeight:"bold",fontSize:13,
+                  boxShadow:"0 1px 4px rgba(0,0,0,0.3)",
+                }}>{n}</div>
+              ))}
+            </div>
+          )}
+        </Section>
+
+        <Btn onClick={handleStart} variant="gold" t={t}>Start Game →</Btn>
+      </div>
+    </div>
+  );
+}
+
+function Section({ label, children, t }) {
+  return (
+    <div style={{
+      background:t.surface, border:`1px solid ${t.surfaceBorder}`,
+      borderRadius:12, padding:"14px 16px",
+    }}>
+      <div style={{fontSize:10,letterSpacing:2,color:t.textMid,textTransform:"uppercase",marginBottom:10,fontWeight:"bold"}}>{label}</div>
+      {children}
+    </div>
+  );
+}
+
+// ─── Game Screen ──────────────────────────────────────────────────────────────
+
+function GameScreen({ config, onMenu }) {
+  const { themeId, mode, players, activeTiles } = config;
+  const t = THEMES[themeId] || THEMES.classic;
+  const isSolo   = mode===MODE.SOLO;
+  const isLowest = mode===MODE.LOWEST || isSolo;
+
+  const mkBoards  = () => players.map(()=>initialTiles(activeTiles));
+  const mkShared  = () => initialTiles(activeTiles);
+
+  const [playerBoards,  setPlayerBoards]  = useState(mkBoards);
+  const [sharedBoard,   setSharedBoard]   = useState(mkShared);
+  const [currentPlayer, setCurrentPlayer] = useState(0);
+  const [eliminated,    setEliminated]    = useState([]);
+  const [playersDone,   setPlayersDone]   = useState([]);
+  const [phase,         setPhase]         = useState(PHASE.IDLE);
+  const [rolling,       setRolling]       = useState(false);
+  const [eventFace,     setEventFace]     = useState(null);
+  const [effectiveDice, setEffectiveDice] = useState([null,null]);
+  const [selectedTiles, setSelectedTiles] = useState([]);
+  const [log,           setLog]           = useState([]);
+  const [gameOver,      setGameOver]      = useState(false);
+  const [gameOverData,  setGameOverData]  = useState(null);
+  const [eventDieUsed,  setEventDieUsed]  = useState(false);
+  const [pendingEffect, setPendingEffect] = useState(null);
+  const [wildValue,     setWildValue]     = useState("");
+  const [hasRolledOnce, setHasRolledOnce] = useState(false);
+  const [passConfirm,   setPassConfirm]   = useState(false);
+  const [bustSelected,  setBustSelected]  = useState(null);
+  const [flipSelected,  setFlipSelected]  = useState(null);
+  const [dieChoice,     setDieChoice]     = useState(null);
+
+  const tilesRef = React.useRef(isLowest ? playerBoards[currentPlayer] : sharedBoard);
+  useEffect(()=>{ tilesRef.current = isLowest ? playerBoards[currentPlayer] : sharedBoard; },
+    [playerBoards,sharedBoard,currentPlayer,isLowest]);
+
+  const addLog = msg => setLog(l=>[`${players[currentPlayer]}: ${msg}`,...l]);
+  const curTiles = isLowest ? playerBoards[currentPlayer] : sharedBoard;
+
+  function setCurTiles(nt) {
+    if (isLowest) setPlayerBoards(prev=>prev.map((b,i)=>i===currentPlayer?nt:b));
+    else setSharedBoard(nt);
+  }
+
+  function getTotal(d) { return (d[0]||0)+(d[1]||0); }
+
+  function resetTurn() {
+    setEffectiveDice([null,null]); setEventFace(null); setEventDieUsed(false);
+    setSelectedTiles([]); setPendingEffect(null); setWildValue("");
+    setBustSelected(null); setFlipSelected(null); setDieChoice(null);
+  }
+
+  // ── Pass / next ────────────────────────────────────────────────────────────
+  function passOrNext() {
+    if (isLowest) {
+      const nowDone = [...playersDone, currentPlayer];
+      setPlayersDone(nowDone); resetTurn(); setHasRolledOnce(false); setPhase(PHASE.IDLE);
+      const active = players.map((_,i)=>i).filter(i=>!nowDone.includes(i));
+      if (active.length===0) { endLowest(nowDone); }
+      else { setCurrentPlayer(active[0]); setPassConfirm(true); }
+    } else {
+      const active = players.map((_,i)=>i).filter(i=>!eliminated.includes(i));
+      const idx = active.indexOf(currentPlayer);
+      setCurrentPlayer(active[(idx+1)%active.length]);
+      resetTurn(); setHasRolledOnce(false); setPhase(PHASE.IDLE); setPassConfirm(true);
+    }
+  }
+
+  function endLowest(doneList) {
+    const scores = players.map((name,i)=>({name,score:calcScore(playerBoards[i])}));
+    const best = Math.min(...scores.map(s=>s.score));
+    const winners = scores.filter(s=>s.score===best).map(s=>s.name);
+    setGameOverData({scores,winners,mode:MODE.LOWEST});
+    setGameOver(true); setPhase(PHASE.GAME_OVER);
+  }
+
+  function endSolo(tiles, perfect) {
+    setGameOverData({score:calcScore(tiles),perfect,mode:MODE.SOLO});
+    setGameOver(true); setPhase(PHASE.GAME_OVER);
+  }
+
+  function eliminate() {
+    const nowElim=[...eliminated,currentPlayer];
+    setEliminated(nowElim);
+    addLog(`${players[currentPlayer]} is eliminated!`);
+    const active=players.map((_,i)=>i).filter(i=>!nowElim.includes(i));
+    if (active.length<=1) {
+      setGameOverData({winner:active.length===1?players[active[0]]:null,mode:MODE.SUDDEN});
+      setGameOver(true); setPhase(PHASE.GAME_OVER);
+    } else {
+      setCurrentPlayer(active[0]); resetTurn(); setHasRolledOnce(false);
+      setPhase(PHASE.IDLE); setPassConfirm(true);
+    }
+  }
+
+  // ── Roll ───────────────────────────────────────────────────────────────────
+  function rollDice() {
+    setRolling(true);
+    setTimeout(()=>{
+      const d=[rollD6(),rollD6()];
+      setEffectiveDice(d); setEventFace(null); setEventDieUsed(false);
+      setSelectedTiles([]); setPendingEffect(null); setWildValue("");
+      setRolling(false); setHasRolledOnce(true);
+      addLog(`Rolled ${d[0]} + ${d[1]} = ${d[0]+d[1]}`);
+      setPhase(PHASE.ROLLED);
+    },380);
+  }
+
+  // ── Event die ──────────────────────────────────────────────────────────────
+  function rollEvent(type) {
+    const faces = type==="safe" ? SAFE_DIE_FACES : RISK_DIE_FACES;
+    const face = faces[Math.floor(Math.random()*faces.length)];
+    setEventFace(face); setEventDieUsed(true);
+    addLog(`${type==="safe"?"Safe":"Risk"} Die → ${FACE_LABELS[face]}`);
+    switch(face) {
+      case "blank": setPhase(PHASE.ROLLED); break;
+      case "+1": setPendingEffect({type:"+1"}); setPhase(PHASE.EVENT_ROLLED); break;
+      case "+2": setPendingEffect({type:"+2"}); setPhase(PHASE.EVENT_ROLLED); break;
+      case "wild": setPendingEffect({type:"wild"}); setPhase(PHASE.EVENT_ROLLED); break;
+      case "flip": setPendingEffect({type:"flip"}); setPhase(PHASE.FLIP_PICK); break;
+      case "+3": {
+        const nd=[effectiveDice[0]+3,effectiveDice[1]];
+        setEffectiveDice(nd); addLog(`Total boosted by 3 → ${nd[0]+nd[1]}`); setPhase(PHASE.ROLLED); break;
+      }
+      case "x2": setPendingEffect({type:"x2"}); setPhase(PHASE.EVENT_ROLLED); break;
+      case "bust": setPendingEffect({type:"bust"}); setPhase(PHASE.BUST_PICK); break;
+      default: setPhase(PHASE.ROLLED);
+    }
+  }
+
+  function applyMod(mod) {
+    return idx => {
+      const nd=[...effectiveDice]; nd[idx]+=mod; setEffectiveDice(nd);
+      addLog(`Die ${idx+1} → ${nd[idx]}, total = ${nd[0]+nd[1]}`);
+      setPendingEffect(null); setPhase(PHASE.ROLLED);
+    };
+  }
+
+  function applyWild() {
+    const v=parseInt(wildValue); if(isNaN(v)||v<1||v>6) return;
+    setPendingEffect({type:"wild_pick",value:v}); setDieChoice(null);
+    addLog(`Wild ${v} — pick which die to replace`);
+  }
+
+  function applyWildToDie(idx) {
+    const v=pendingEffect.value; const nd=[...effectiveDice]; nd[idx]=v;
+    setEffectiveDice(nd); addLog(`Die ${idx+1} → ${v}, total = ${nd[0]+nd[1]}`);
+    setPendingEffect(null); setWildValue(""); setPhase(PHASE.ROLLED);
+  }
+
+  function applyX2(idx) {
+    const nd=[...effectiveDice]; nd[idx]*=2; setEffectiveDice(nd);
+    addLog(`Die ${idx+1} doubled → ${nd[idx]}, total = ${nd[0]+nd[1]}`);
+    setPendingEffect(null); setPhase(PHASE.ROLLED);
+  }
+
+  function confirmFlip() {
+    if (flipSelected===null) return;
+    const s=curTiles[flipSelected]; if(s==="cursed") return;
+    const ns=s==="open"?"closed":"open";
+    const nt={...curTiles,[flipSelected]:ns};
+    setCurTiles(nt); addLog(`Tile ${flipSelected} flipped → ${ns}`);
+    setPendingEffect(null); setFlipSelected(null);
+    if (Object.values(nt).every(x=>x==="closed")) { endTurnPerfect(nt); return; }
+    setPhase(PHASE.ROLLED);
+  }
+
+  function confirmBust() {
+    if (bustSelected===null) return;
+    const nt={...curTiles,[bustSelected]:"cursed"};
+    setCurTiles(nt); addLog(`💀 Tile ${bustSelected} cursed permanently`);
+    setPendingEffect(null); setBustSelected(null); setPhase(PHASE.ROLLED);
+  }
+
+  function endTurnPerfect(tiles) {
+    addLog("🎉 All tiles closed!");
+    if (isSolo) endSolo(tiles,true);
+    else if (isLowest) passOrNext();
+    else { setGameOverData({winner:players[currentPlayer],mode:MODE.SUDDEN,perfect:true}); setGameOver(true); setPhase(PHASE.GAME_OVER); }
+  }
+
+  function confirmSelection() {
+    const tot=getTotal(effectiveDice);
+    const sum=selectedTiles.reduce((a,b)=>a+b,0);
+    if (sum!==tot || !selectedTiles.every(n=>curTiles[n]==="open")) return;
+    const nt={...curTiles}; selectedTiles.forEach(n=>{nt[n]="closed";});
+    setCurTiles(nt); addLog(`Closed: [${[...selectedTiles].sort((a,b)=>a-b).join(", ")}]`);
+    setSelectedTiles([]);
+    if (Object.values(nt).every(x=>x==="closed")) { endTurnPerfect(nt); return; }
+    setPhase(PHASE.IDLE);
+  }
+
+  // ── Derived ────────────────────────────────────────────────────────────────
+  const total        = getTotal(effectiveDice);
+  const selectedSum  = selectedTiles.reduce((a,b)=>a+b,0);
+  const selValid     = selectedTiles.length>0 && selectedSum===total;
+  const isStuck      = phase===PHASE.ROLLED && !pendingEffect
+    && effectiveDice[0]!==null && validCombos(total,curTiles).length===0;
+
+  const flippable = phase===PHASE.FLIP_PICK
+    ? Object.entries(curTiles).filter(([,s])=>s!=="cursed").map(([n])=>parseInt(n)) : [];
+  const bustable  = phase===PHASE.BUST_PICK
+    ? Object.entries(curTiles).filter(([,s])=>s==="open").map(([n])=>parseInt(n)) : [];
+  const selectable = phase===PHASE.ROLLED
+    ? Object.entries(curTiles).filter(([,s])=>s==="open").map(([n])=>parseInt(n)) : [];
+
+  const clickable = n =>
+    (phase===PHASE.FLIP_PICK && flippable.includes(n)) ||
+    (phase===PHASE.BUST_PICK && bustable.includes(n))  ||
+    (phase===PHASE.ROLLED    && selectable.includes(n));
+
+  const handleTileClick = n => {
+    if (phase===PHASE.FLIP_PICK) { if(curTiles[n]!=="cursed") setFlipSelected(n); return; }
+    if (phase===PHASE.BUST_PICK) { if(curTiles[n]==="open") setBustSelected(n); return; }
+    if (phase===PHASE.ROLLED)    { setSelectedTiles(prev=>prev.includes(n)?prev.filter(x=>x!==n):[...prev,n]); }
+  };
+
+  const tileSelected = n =>
+    selectedTiles.includes(n) ||
+    (phase===PHASE.BUST_PICK && bustSelected===n) ||
+    (phase===PHASE.FLIP_PICK && flipSelected===n);
+
+  const openCount   = Object.values(curTiles).filter(s=>s==="open").length;
+  const closedCount = Object.values(curTiles).filter(s=>s==="closed").length;
+  const cursedCount = Object.values(curTiles).filter(s=>s==="cursed").length;
+
+  function resetAll() {
+    setPlayerBoards(mkBoards()); setSharedBoard(mkShared());
+    setCurrentPlayer(0); setEliminated([]); setPlayersDone([]);
+    setPhase(PHASE.IDLE); resetTurn(); setLog([]);
+    setGameOver(false); setGameOverData(null); setHasRolledOnce(false);
+  }
+
+  // ── Pass confirm ───────────────────────────────────────────────────────────
+  if (passConfirm) {
     return (
-      <div className="screen">
-        <div className="screen-title">Settings</div>
-        <div style={{padding:24,color:"#4A6280",fontSize:14}}>Loading settings…</div>
+      <div style={{minHeight:"100dvh",background:t.bgGrad,display:"flex",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"'Georgia',serif"}}>
+        <style>{`@keyframes cIn{from{opacity:0;transform:scale(0.95)}to{opacity:1;transform:none}}`}</style>
+        <div style={{background:t.surface,border:`1px solid ${t.accentBorder}`,borderRadius:16,padding:"32px 36px",textAlign:"center",boxShadow:"0 8px 32px rgba(0,0,0,0.5)",maxWidth:320,animation:"cIn 0.3s ease"}}>
+          <div style={{fontSize:12,color:t.textMid,marginBottom:8,letterSpacing:1}}>Next up</div>
+          <div style={{fontSize:28,color:t.textBright,fontWeight:"bold",marginBottom:8}}>{players[currentPlayer]}</div>
+          <div style={{fontSize:13,color:t.textMid,marginBottom:22}}>Hand the device over, then tap Ready.</div>
+          <Btn onClick={()=>setPassConfirm(false)} variant="gold" t={t}>Ready — Let's Go</Btn>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className="screen">
-      <div className="screen-title">Settings</div>
-
-      {/* ── Color Bands ── */}
-      <div className="section-label">Color Bands</div>
-      <div className="threshold-panel">
-        <div className="threshold-title">Spending Levels</div>
-        <div className="threshold-hint">
-          The hero number changes color as your safe-to-spend crosses each level. Dollar or percent of each income account's opening balance.
-        </div>
-        <div className="mode-toggle">
-          <button className={`mode-btn ${tMode === "dollar"  ? "active" : ""}`} onClick={() => setTMode("dollar")}>$ Dollar</button>
-          <button className={`mode-btn ${tMode === "percent" ? "active" : ""}`} onClick={() => setTMode("percent")}>% Percent</button>
-        </div>
-        <div className="band-preview">
-          {["#00D4AA","#F5C842","#F5A623","#FF6B6B"].map(c => <div key={c} className="band-seg" style={{ background: c }} />)}
-        </div>
-        {[
-          { color:"#00D4AA", label:"Above this →", val:tHi, set:setTHi, ph:placeholder[0] },
-          { color:"#F5C842", label:"Above this →", val:tMid, set:setTMid, ph:placeholder[1] },
-          { color:"#F5A623", label:"Above this →", val:tLo, set:setTLo, ph:placeholder[2] },
-        ].map(({ color, val, set, ph }) => (
-          <div className="threshold-row" key={color}>
-            <div className="threshold-swatch" style={{ background: color }} />
-            <input className="threshold-input" placeholder={ph} value={val}
-              onChange={e => set(e.target.value)} type="number" inputMode="decimal" />
-            <span className="threshold-unit">{unit}</span>
-          </div>
-        ))}
-        <div style={{ fontSize:11, color:"#2E4A6A", marginBottom:12, paddingLeft:22 }}>Below the last level shows red.</div>
-        <button className="threshold-save" onClick={handleSave}>Save levels</button>
-      </div>
-
-      {/* ── Due Date Thresholds ── */}
-      <div className="section-label">Payment Due Colors</div>
-      <div className="threshold-panel">
-        <div className="threshold-title">Days Until Due</div>
-        <div className="threshold-hint">
-          Each card shows a color strip and badge based on how many days until its bill is due.
-        </div>
-        <div className="band-preview">
-          {["#00D4AA","#F5C842","#F5A623","#FF6B6B"].map(c => <div key={c} className="band-seg" style={{ background:c }} />)}
-        </div>
-        {[
-          { color:"#00D4AA", val:dGreen,  set:setDGreen,  ph:"e.g. 14" },
-          { color:"#F5C842", val:dYellow, set:setDYellow, ph:"e.g. 7"  },
-          { color:"#F5A623", val:dRed,    set:setDRed,    ph:"e.g. 3"  },
-        ].map(({ color, val, set, ph }) => (
-          <div className="threshold-row" key={color}>
-            <div className="threshold-swatch" style={{ background:color }} />
-            <input className="threshold-input" placeholder={ph} value={val}
-              onChange={e => set(e.target.value)} type="number" inputMode="numeric" />
-            <span className="threshold-unit">days</span>
-          </div>
-        ))}
-        <div style={{ fontSize:11, color:"#2E4A6A", marginBottom:12, paddingLeft:22 }}>
-          Below the last level shows red. Changes save with the "Save levels" button above.
-        </div>
-      </div>
-
-      {/* ── Income Accounts (ordered) ── */}
-      {/* ── Investment Color Thresholds ── */}
-      <div className="section-label">Investment Goal Colors</div>
-      <div className="threshold-panel">
-        <div className="threshold-title">% of Goal</div>
-        <div className="threshold-hint">
-          Colors the investment tab hero number based on overall progress toward your total goal.
-        </div>
-        <div className="band-preview">
-          {["#00D4AA","#F5C842","#F5A623","#FF6B6B"].map(c=><div key={c} className="band-seg" style={{background:c}}/>)}
-        </div>
-        {[
-          {color:"#00D4AA",val:iGreen, set:setIGreen, ph:"e.g. 75"},
-          {color:"#F5C842",val:iYellow,set:setIYellow,ph:"e.g. 40"},
-          {color:"#F5A623",val:iRed,   set:setIRed,   ph:"e.g. 10"},
-        ].map(({color,val,set,ph})=>(
-          <div className="threshold-row" key={color}>
-            <div className="threshold-swatch" style={{background:color}}/>
-            <input className="threshold-input" placeholder={ph} value={val}
-              onChange={e=>set(e.target.value)} type="number" inputMode="decimal"/>
-            <span className="threshold-unit">%</span>
-          </div>
-        ))}
-        <div style={{fontSize:11,color:"#2E4A6A",marginBottom:12,paddingLeft:22}}>Below the last level shows red.</div>
-        <button className="threshold-save" onClick={handleSave}>Save all</button>
-      </div>
-
-      {/* Balance History */}
-      <div className="section-label">Balance History</div>
-      <div className="history-section">
-        {!snapshots || snapshots.length === 0
-          ? <div className="history-empty" style={{padding:"24px 0"}}>No history yet.</div>
-          : [...snapshots].sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)).map(s => {
-              const acct = accounts && accounts.find(ac => ac.last4 === s.accountLast4);
-              return (
-                <div className="history-item" key={s.id}>
-                  <div>
-                    <div className="history-account">{acct ? acct.label : "Acct"} •{s.accountLast4}</div>
-                    <div className="history-time">{fmtTime(s.timestamp)}</div>
-                    <span className={`history-source src-${s.source}`}>{SOURCES[s.source]}</span>
+  // ── Game over ──────────────────────────────────────────────────────────────
+  if (gameOver && gameOverData) {
+    return (
+      <div style={{minHeight:"100dvh",background:t.bgGrad,display:"flex",alignItems:"center",justifyContent:"center",padding:24,fontFamily:"'Georgia',serif"}}>
+        <style>{`@keyframes cIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}`}</style>
+        <div style={{background:t.surface,border:`1px solid ${t.accentBorder}`,borderRadius:16,padding:"28px 24px",textAlign:"center",boxShadow:"0 8px 32px rgba(0,0,0,0.5)",maxWidth:400,width:"100%",animation:"cIn 0.4s ease"}}>
+          {gameOverData.mode===MODE.SOLO && (
+            <>
+              <div style={{fontSize:40,marginBottom:8}}>{gameOverData.perfect?"🎉":"🎲"}</div>
+              <div style={{color:gameOverData.perfect?t.accent:t.textMid,fontSize:22,fontWeight:"bold",marginBottom:6}}>
+                {gameOverData.perfect?"Perfect Game!":"Game Over"}
+              </div>
+              {!gameOverData.perfect && <>
+                <div style={{color:t.textMid,fontSize:13,marginBottom:4}}>Final Score</div>
+                <div style={{color:t.accent,fontSize:52,fontWeight:"bold",lineHeight:1,marginBottom:4}}>{gameOverData.score}</div>
+                <div style={{color:t.textDim,fontSize:12,marginBottom:16}}>lower is better</div>
+              </>}
+              {gameOverData.perfect && <div style={{color:t.textMid,fontSize:14,marginBottom:16}}>All tiles closed!</div>}
+            </>
+          )}
+          {gameOverData.mode===MODE.SUDDEN && (
+            <>
+              <div style={{fontSize:40,marginBottom:8}}>{gameOverData.perfect?"🎉":"👑"}</div>
+              <div style={{color:t.accent,fontSize:26,fontWeight:"bold",marginBottom:gameOverData.perfect?6:18}}>
+                {gameOverData.winner?`${gameOverData.winner} wins!`:"Draw!"}
+              </div>
+              {gameOverData.perfect && <div style={{color:t.textMid,fontSize:14,marginBottom:16}}>Perfect clear!</div>}
+            </>
+          )}
+          {gameOverData.mode===MODE.LOWEST && (
+            <>
+              <div style={{fontSize:40,marginBottom:8}}>🏆</div>
+              <div style={{color:t.accent,fontSize:22,fontWeight:"bold",marginBottom:14}}>
+                {gameOverData.winners.length===1?`${gameOverData.winners[0]} wins!`:`Tie: ${gameOverData.winners.join(" & ")}!`}
+              </div>
+              <div style={{marginBottom:18}}>
+                {[...gameOverData.scores].sort((a,b)=>a.score-b.score).map((s,i)=>(
+                  <div key={i} style={{
+                    display:"flex",justifyContent:"space-between",alignItems:"center",
+                    padding:"7px 12px",marginBottom:5,
+                    background:s.score===Math.min(...gameOverData.scores.map(x=>x.score))?t.accentDim:"rgba(255,255,255,0.03)",
+                    borderRadius:8,border:`1px solid ${t.surfaceBorder}`,
+                  }}>
+                    <span style={{color:t.textMid,fontSize:14}}>{s.name}</span>
+                    <span style={{color:t.accent,fontWeight:"bold",fontSize:18}}>{s.score}</span>
                   </div>
-                  <div className="history-balance">{fmt(s.balance)}</div>
-                </div>
-              );
-            })
-        }
-      </div>
-
-      <div className="section-label">Data</div>
-      <ExportImportPanel
-        exportArgs={[accounts||[], snapshots||[], bills||[], paycheck||{}, billsOverride||null,
-                     roadmap||[], investments||[], thresholds||{}, thresholdMode||"percent",
-                     dueThresholds||{}, investThresholds||{}]}
-        importCallbacks={{
-          setAccounts:        v => { save("s2s_accounts",       v); setAccounts(v); },
-          setSnapshots:       v => { save("s2s_snapshots",      v); setSnapshots(v); },
-          setBills:           v => { save("s2s_bills",          v); setBills(v); },
-          setPaycheck:        v => { save("s2s_paycheck",       v); setPaycheck(v); },
-          setBillsOverride:   v => { save("s2s_bills_override", v); setBillsOverride(v); },
-          setRoadmap:         v => { save("s2s_roadmap",        v); setRoadmap(v); },
-          setInvestments:     v => { save("s2s_investments",    v); setInvestments(v); },
-          setThresholds:      v => { save("s2s_thresholds",     v); setThresholds(v); },
-          setThresholdMode:   v => { save("s2s_tmode",          v); setThresholdMode(v); },
-          setDueThresholds:   v => { save("s2s_due_thr",        v); setDueThresholds(v); },
-          setInvestThresholds:v => { save("s2s_inv_thr",        v); setInvestThresholds(v); },
-        }}
-        showToast={showToast}
-      />
-      <div className="section-label">About</div>
-      <div className="settings-section">
-        <div className="settings-row">
-          <div>
-            <div className="settings-row-label">Safe2Spend</div>
-            <div className="settings-row-sub">v0.8 · 4 account roles · Bills scale · Swipe nav</div>
+                ))}
+              </div>
+            </>
+          )}
+          <div style={{display:"flex",gap:10,justifyContent:"center"}}>
+            <Btn onClick={()=>{ resetAll(); if(!isSolo) setPassConfirm(true); }} variant="gold" t={t}>Play Again</Btn>
+            <Btn onClick={onMenu} variant="green" t={t}>Menu</Btn>
           </div>
         </div>
-        <div className="settings-row" style={{flexDirection:"column",alignItems:"stretch",gap:8}}>
-          <div className="settings-row-label">Reset to Sample Data</div>
-          <div className="settings-row-sub">Clears all saved data and reloads the app with fresh sample accounts, bills, and history.</div>
-          <button onClick={resetAllData}
-            style={{marginTop:4,padding:"10px 16px",borderRadius:10,border:"none",
-              background:"#FF6B6B18",color:"#FF6B6B",fontFamily:"'DM Sans',sans-serif",
-              fontSize:13,fontWeight:600,cursor:"pointer",textAlign:"left"}}>
-            Reset App Data
-          </button>
-        </div>
       </div>
-    </div>
-  );
-}
+    );
+  }
 
-// ─── Dashboard Character ─────────────────────────────────────────────────────
-// Minimal flat Apple-ish illustration; scene changes with milestone progress
-
-function CharacterScene({ doneCount, totalSteps, currentStep }) {
-  const pct = totalSteps > 0 ? doneCount / totalSteps : 0;
-
-  // Scene 0-2 done: person at a desk, looking at phone (just starting out)
-  // Scene 3-5 done: person in a car, driving (momentum)
-  // Scene 6-9 done: person climbing a mountain (building wealth)
-  // Scene 10+  done: person at summit with flag (thriving)
-
-  const scene = doneCount <= 2 ? "desk" : doneCount <= 5 ? "car" : doneCount <= 9 ? "mountain" : "summit";
-
-  const scenes = {
-    desk: {
-      label: "Getting started",
-      color: "#9B88FF",
-      svg: (
-        <svg viewBox="0 0 220 120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:"100%",maxWidth:220}}>
-          {/* desk */}
-          <rect x="30" y="82" width="160" height="8" rx="3" fill="#1A2E4A"/>
-          <rect x="50" y="90" width="6" height="22" rx="2" fill="#1A2E4A"/>
-          <rect x="164" y="90" width="6" height="22" rx="2" fill="#1A2E4A"/>
-          {/* laptop */}
-          <rect x="80" y="62" width="60" height="38" rx="4" fill="#0D1929" stroke="#2E4A6A" strokeWidth="1.5"/>
-          <rect x="84" y="66" width="52" height="29" rx="2" fill="#111E33"/>
-          {/* screen glow lines */}
-          <rect x="88" y="70" width="30" height="2" rx="1" fill="#9B88FF" opacity="0.6"/>
-          <rect x="88" y="75" width="22" height="2" rx="1" fill="#9B88FF" opacity="0.4"/>
-          <rect x="88" y="80" width="26" height="2" rx="1" fill="#00D4AA" opacity="0.5"/>
-          <rect x="68" y="100" width="84" height="4" rx="2" fill="#1A2E4A"/>
-          {/* person */}
-          <circle cx="52" cy="54" r="12" fill="#F5A623"/>
-          <rect x="40" y="68" width="24" height="20" rx="4" fill="#9B88FF"/>
-          {/* arm reaching to laptop */}
-          <path d="M64 74 Q72 74 78 70" stroke="#F5A623" strokeWidth="3.5" strokeLinecap="round"/>
-          {/* coffee */}
-          <rect x="152" y="72" width="14" height="14" rx="3" fill="#1A2E4A" stroke="#2E4A6A" strokeWidth="1"/>
-          <path d="M155 68 Q157 64 159 68" stroke="#4A6280" strokeWidth="1.5" strokeLinecap="round"/>
-        </svg>
-      )
-    },
-    car: {
-      label: "Building momentum",
-      color: "#F5C842",
-      svg: (
-        <svg viewBox="0 0 220 120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:"100%",maxWidth:220}}>
-          {/* road */}
-          <rect x="0" y="90" width="220" height="30" fill="#0D1929"/>
-          <rect x="0" y="88" width="220" height="4" fill="#1A2E4A"/>
-          {/* road dashes */}
-          {[10,50,90,130,170].map(x=><rect key={x} x={x} y="103" width="24" height="3" rx="1.5" fill="#2E4A6A"/>)}
-          {/* car body */}
-          <rect x="40" y="68" width="130" height="32" rx="8" fill="#9B88FF"/>
-          {/* car top */}
-          <path d="M70 68 Q80 44 100 42 L140 42 Q158 44 160 68Z" fill="#7B68EE"/>
-          {/* windows */}
-          <rect x="82" y="48" width="30" height="18" rx="3" fill="#C8D8E8" opacity="0.3"/>
-          <rect x="118" y="48" width="30" height="18" rx="3" fill="#C8D8E8" opacity="0.3"/>
-          {/* wheels */}
-          <circle cx="78" cy="100" r="12" fill="#0A1628" stroke="#2E4A6A" strokeWidth="2"/>
-          <circle cx="78" cy="100" r="5" fill="#1A2E4A"/>
-          <circle cx="148" cy="100" r="12" fill="#0A1628" stroke="#2E4A6A" strokeWidth="2"/>
-          <circle cx="148" cy="100" r="5" fill="#1A2E4A"/>
-          {/* headlights */}
-          <ellipse cx="170" cy="80" rx="5" ry="4" fill="#F5C842" opacity="0.8"/>
-          <path d="M175 78 L195 72 M175 82 L195 88" stroke="#F5C842" strokeWidth="1.5" strokeLinecap="round" opacity="0.4"/>
-          {/* person in car */}
-          <circle cx="110" cy="56" r="9" fill="#F5A623"/>
-          {/* speed lines */}
-          {[20,30,40].map((y,i)=>(
-            <line key={i} x1={10} y1={y+50} x2={30} y2={y+50} stroke="#2E4A6A" strokeWidth="1.5" strokeLinecap="round" opacity={0.3+i*0.2}/>
-          ))}
-        </svg>
-      )
-    },
-    mountain: {
-      label: "Climbing higher",
-      color: "#00D4AA",
-      svg: (
-        <svg viewBox="0 0 220 120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:"100%",maxWidth:220}}>
-          {/* sky gradient suggestion */}
-          <rect x="0" y="0" width="220" height="120" fill="#0A1628"/>
-          {/* mountain far */}
-          <path d="M0 120 L60 40 L120 120Z" fill="#111E33"/>
-          {/* mountain near */}
-          <path d="M60 120 L140 20 L220 120Z" fill="#0D1929"/>
-          {/* snow cap */}
-          <path d="M130 36 L140 20 L150 36 Q140 32 130 36Z" fill="#C8D8E8" opacity="0.3"/>
-          {/* path up mountain */}
-          <path d="M80 120 Q100 90 115 60 Q125 40 140 20" stroke="#2E4A6A" strokeWidth="2" strokeDasharray="4 4" strokeLinecap="round"/>
-          {/* person climbing */}
-          <circle cx="112" cy="65" r="9" fill="#F5A623"/>
-          <rect x="105" y="75" width="14" height="16" rx="3" fill="#00D4AA"/>
-          {/* arm with axe/pole */}
-          <line x1="119" y1="77" x2="128" y2="65" stroke="#F5A623" strokeWidth="2.5" strokeLinecap="round"/>
-          <line x1="128" y1="65" x2="128" y2="55" stroke="#C8D8E8" strokeWidth="1.5" strokeLinecap="round"/>
-          {/* stars */}
-          {[[185,15],[195,30],[175,25],[200,10]].map(([x,y],i)=>(
-            <circle key={i} cx={x} cy={y} r="1.5" fill="#4A6280" opacity={0.6}/>
-          ))}
-        </svg>
-      )
-    },
-    summit: {
-      label: "At the summit",
-      color: "#00D4AA",
-      svg: (
-        <svg viewBox="0 0 220 120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{width:"100%",maxWidth:220}}>
-          <rect x="0" y="0" width="220" height="120" fill="#0A1628"/>
-          {/* mountains background */}
-          <path d="M0 120 L50 55 L100 120Z" fill="#111E33"/>
-          <path d="M90 120 L150 30 L210 120Z" fill="#0D1929"/>
-          <path d="M140 48 L150 30 L160 48 Q150 44 140 48Z" fill="#C8D8E8" opacity="0.4"/>
-          {/* sunrise rays */}
-          {[0,30,60,90,120,150,180,210,240,270,300,330].map((deg,i)=>(
-            <line key={i}
-              x1={110} y1={30}
-              x2={110 + Math.cos(deg*Math.PI/180)*40}
-              y2={30  + Math.sin(deg*Math.PI/180)*40}
-              stroke="#F5C842" strokeWidth="1" opacity={0.15}/>
-          ))}
-          <circle cx="110" cy="30" r="14" fill="#F5C842" opacity="0.15"/>
-          <circle cx="110" cy="30" r="8"  fill="#F5C842" opacity="0.4"/>
-          {/* person at summit */}
-          <circle cx="150" cy="48" r="9" fill="#F5A623"/>
-          <rect x="143" y="58" width="14" height="16" rx="3" fill="#00D4AA"/>
-          {/* flag */}
-          <line x1="157" y1="55" x2="157" y2="30" stroke="#C8D8E8" strokeWidth="1.5" strokeLinecap="round"/>
-          <path d="M157 30 L172 35 L157 40Z" fill="#00D4AA"/>
-          {/* arms up */}
-          <line x1="143" y1="62" x2="134" y2="52" stroke="#F5A623" strokeWidth="2.5" strokeLinecap="round"/>
-          <line x1="157" y1="62" x2="163" y2="52" stroke="#F5A623" strokeWidth="2.5" strokeLinecap="round"/>
-          {/* sparkles */}
-          {[[130,25],[175,20],[185,45],[120,42]].map(([x,y],i)=>(
-            <g key={i}>
-              <line x1={x} y1={y-4} x2={x} y2={y+4} stroke="#00D4AA" strokeWidth="1.5" strokeLinecap="round" opacity="0.7"/>
-              <line x1={x-4} y1={y} x2={x+4} y2={y} stroke="#00D4AA" strokeWidth="1.5" strokeLinecap="round" opacity="0.7"/>
-            </g>
-          ))}
-        </svg>
-      )
-    }
-  };
-
-  const s = scenes[scene];
+  // ── Main game UI ───────────────────────────────────────────────────────────
   return (
     <div style={{
-      background:"#111E33", border:`1px solid ${s.color}20`,
-      borderRadius:16, padding:"20px 20px 16px", margin:"0 16px 16px",
-      textAlign:"center"
+      height:"100dvh", background:t.bgGrad, overflow:"hidden",
+      display:"flex", flexDirection:"column", fontFamily:"'Georgia',serif",
     }}>
-      <div style={{marginBottom:12}}>{s.svg}</div>
-      <div style={{fontSize:11,fontWeight:600,letterSpacing:"2px",textTransform:"uppercase",color:s.color,marginBottom:4}}>
-        {s.label}
-      </div>
-      {currentStep && (
-        <div style={{fontSize:13,color:"#C8D8E8"}}>
-          Working toward: <strong>{currentStep.label}</strong>
-        </div>
-      )}
-      <div style={{fontSize:11,color:"#2E4A6A",marginTop:4}}>
-        {doneCount} of {totalSteps} milestones complete
-      </div>
-    </div>
-  );
-}
+      <style>{`@keyframes dieSpin{0%{transform:rotate(0deg) scale(1)}40%{transform:rotate(180deg) scale(1.15)}100%{transform:rotate(360deg) scale(1)}}`}</style>
 
-// ─── DashboardScreen ──────────────────────────────────────────────────────────
-
-function DashboardScreen({ safeToSpend, thresholds, thresholdMode, firstBalance,
-                           accounts, bills, paycheck, roadmap, snapshots, latestBalance, dueThresholds, billsOverride }) {
-  const incomeAccts  = accounts.filter(a => a.role === "spending_bank").sort((a,b) => a.incomeRank - b.incomeRank);
-  const spendingAccts = accounts.filter(a => a.role === "credit_card");
-
-  // Projected safe to spend from paycheck planner
-  const freq = paycheck.frequency || "biweekly";
-  const FREQ_PER_YEAR = { weekly:52, biweekly:26, semimonthly:24, monthly:12 };
-  const perYear = FREQ_PER_YEAR[freq] || 26;
-  const netPay = parseFloat(paycheck.netPay) || 0;
-  function reservePerPaycheck(bill) {
-    const BILL_FREQ = { weekly:52, biweekly:26, semimonthly:24, monthly:12, quarterly:4, annual:1, onetime:0 };
-    const myPct = parseFloat(bill.myPct) || 100;
-    const annual = (parseFloat(bill.amount) || 0) * (BILL_FREQ[bill.frequency] || 12) * (myPct / 100);
-    return annual / perYear;
-  }
-  const totalReserve = bills.reduce((s, b) => s + reservePerPaycheck(b), 0);
-  const projectedSafe = netPay - totalReserve;
-
-  // Current roadmap step
-  const currentStep = roadmap.find(s => s.status === "current");
-  const doneSteps   = roadmap.filter(s => s.status === "done").length;
-  const nextStep    = roadmap.find(s => s.status === "future");
-
-  // Upcoming bills (next 14 days)
-  const today = new Date();
-  const upcoming = spendingAccts
-    .filter(a => a.dueDay)
-    .map(a => {
-      const days = daysUntilDue(a.dueDay);
-      const bal  = latestBalance(a.last4);
-      return { ...a, days, bal };
-    })
-    .filter(a => a.days !== null && a.days <= 14)
-    .sort((a,b) => a.days - b.days);
-
-  // Float status
-  const monthlyBillsByAcct = {};
-  bills.forEach(b => {
-    const BILL_FREQ = { weekly:52, biweekly:26, semimonthly:24, monthly:12, quarterly:4, annual:1, onetime:0 };
-    const monthly = (parseFloat(b.amount) || 0) * ((BILL_FREQ[b.frequency] || 12) / 12);
-    const acct = b.paymentAcct;
-    if (acct) monthlyBillsByAcct[acct] = (monthlyBillsByAcct[acct] || 0) + monthly;
-  });
-
-  const primaryAcct = incomeAccts[0];
-  const primaryBal  = primaryAcct ? latestBalance(primaryAcct.last4) : null;
-  const primaryStart = primaryAcct ? firstBalance(primaryAcct.last4) : null;
-  const heroCol = bandColor(safeToSpend, thresholds, thresholdMode, primaryStart);
-  const today2 = new Date().toLocaleDateString("en-US", { weekday:"long", month:"long", day:"numeric" });
-
-  return (
-    <div className="screen">
-      <div className="header">
-        <div className="header-label">Dashboard</div>
-        <div className="header-date">{today2}</div>
-      </div>
-
-      {/* Projected surplus suggestion */}
-      {projectedSafe > 0 && currentStep && (
-        <div className="suggest-card">
-          <div className="suggest-label">Projected Surplus</div>
-          <div className="suggest-title">{fmtShort(projectedSafe)} extra this paycheck</div>
-          <div className="suggest-reason">
-            Consider putting it toward: <strong style={{color:"#E8EEF6"}}>{currentStep.label}</strong>
+      {/* ── Header ── */}
+      <div style={{
+        flexShrink:0, padding:"12px 16px 0",
+        display:"flex", alignItems:"center", justifyContent:"center",
+        position:"relative",
+      }}>
+        <button onClick={onMenu} style={{
+          position:"absolute", left:16,
+          background:t.surface, border:`1px solid ${t.surfaceBorder}`,
+          borderRadius:8, padding:"5px 11px",
+          color:t.textMid, fontFamily:"'Georgia',serif", fontSize:12, cursor:"pointer",
+        }}>← Menu</button>
+        <div style={{textAlign:"center"}}>
+          <div style={{fontSize:22,fontWeight:"bold",color:t.titleColor,letterSpacing:0.5}}>Flip the Box</div>
+          <div style={{fontSize:10,color:t.textDim,letterSpacing:2,textTransform:"uppercase"}}>
+            {isSolo?"Solo":isLowest?"Lowest Score":"Sudden Death"}
           </div>
-        </div>
-      )}
-
-      {/* Character scene */}
-      <CharacterScene doneCount={doneSteps} totalSteps={roadmap.length} currentStep={currentStep}/>
-
-      <div className="dash-grid">
-
-        {/* Safe to Spend */}
-        <div className="dash-card">
-          <div className="dash-card-label">Safe to Spend</div>
-          <div className="dash-card-value" style={{color: heroCol}}>{fmtShort(safeToSpend)}</div>
-          <div className="dash-card-sub">Based on current balances</div>
-        </div>
-
-        {/* Next paycheck */}
-        <div className="dash-row">
-          <div className="dash-card dash-half small">
-            <div className="dash-card-label">Next Paycheck</div>
-            <div className="dash-card-value">{fmtShort(netPay)}</div>
-            <div className="dash-card-sub">{freq}</div>
-          </div>
-          <div className="dash-card dash-half small">
-            <div className="dash-card-label">Reserved</div>
-            <div className="dash-card-value" style={{color:"#F5A623"}}>{fmtShort(totalReserve)}</div>
-            <div className="dash-card-sub">for bills</div>
-          </div>
-        </div>
-        {/* Trough insight card */}
-        {(() => {
-          const billsBanks = accounts.filter(a=>a.role==="bills_bank");
-          const totalBillsBal = billsBanks.reduce((s,a)=>s+(latestBalance(a.last4)??0),0);
-          if (!billsBanks.length || !netPay) return null;
-          const sim = runTroughSimulation({
-            bills, totalBillsBal,
-            netPay: billsOverride?.netPay ?? netPay,
-            frequency: billsOverride?.frequency ?? freq,
-            floatMult: billsBanks[0]?.floatMultiplier ?? 1.5,
-            accounts,
-          });
-          const troughCol = sim.troughLowest >= sim.warnThresh ? "#00D4AA"
-                          : sim.troughLowest >= 0 ? "#F5C842" : "#FF6B6B";
-          return (
-            <div className="dash-card" style={{borderColor: troughCol+"30"}}>
-              <div className="dash-card-label">Bills Account · Trough Forecast</div>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-end"}}>
-                <div>
-                  <div className="dash-card-value" style={{color:troughCol}}>{fmtShort(sim.troughLowest)}</div>
-                  <div className="dash-card-sub">lowest around {sim.troughDate}</div>
-                </div>
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontFamily:"'Space Grotesk',monospace",fontSize:16,fontWeight:600,color:"#F5A623"}}>
-                    −{fmtShort(sim.troughExposure)}
-                  </div>
-                  <div style={{fontSize:11,color:"#4A6280",marginTop:2}}>trough depth · {sim.mult}× float</div>
-                </div>
-              </div>
-              {sim.troughLowest < 0 && (
-                <div style={{marginTop:8,fontSize:11,color:"#FF6B6B",padding:"6px 10px",background:"#FF6B6B10",borderRadius:6}}>
-                  Account would go negative — increase float or add funds
-                </div>
-              )}
-              {sim.troughLowest >= 0 && sim.troughLowest < sim.warnThresh && (
-                <div style={{marginTop:8,fontSize:11,color:"#F5C842",padding:"6px 10px",background:"#F5C84210",borderRadius:6}}>
-                  Gets tight but stays positive. No room for surprises.
-                </div>
-              )}
-            </div>
-          );
-        })()}
-
-        {/* Roadmap */}
-        {currentStep && (
-          <div className="dash-card">
-            <div className="dash-card-label">Current Milestone</div>
-            <div className="dash-card-value" style={{fontSize:20, color:"#00D4AA"}}>{currentStep.label}</div>
-            {nextStep && <div className="dash-card-sub">Next: {nextStep.label}</div>}
-            <div className="dash-card-sub">{doneSteps} of {roadmap.length} complete</div>
-          </div>
-        )}
-
-        {/* Float status */}
-        {accounts.filter(a => a.floatEnabled !== false && a.floatMultiplier).map(a => {
-          const monthly = monthlyBillsByAcct[a.last4] || 0;
-          const targetMult = a.floatMultiplier || 1.5;
-          const target  = monthly * targetMult;
-          const bal     = latestBalance(a.last4) ?? 0;
-          const actualMult = target > 0 ? (bal / monthly) : null;
-          const diff    = bal - target;
-          const col     = diff >= 0 ? "#00D4AA" : bal >= target * 0.75 ? "#F5C842" : "#FF6B6B";
-          return (
-            <div className="dash-card" key={a.last4}>
-              <div className="dash-card-label">Operating Float · {a.label}</div>
-              <div className="dash-card-value" style={{color:col}}>{fmtShort(bal)}</div>
-              <div className="dash-card-sub">
-                Target {fmtShort(target)} ({targetMult}×)
-                {actualMult !== null && ` · Actual ${actualMult.toFixed(1)}×`}
-                {" · "}{diff>=0?"+":""}{fmtShort(diff)}
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Upcoming bills */}
-        {upcoming.length > 0 && (
-          <div className="dash-card">
-            <div className="dash-card-label">Due Soon</div>
-            <div className="upcoming-list">
-              {upcoming.map(a => {
-                const dc = dueColor(a.days, dueThresholds);
-                return (
-                  <div className="upcoming-item" key={a.last4}>
-                    <div>
-                      <div className="upcoming-name">{a.label}</div>
-                      <div className="upcoming-due" style={{color: dc}}>
-                        {nextDueDateStr(a.dueDay)} · {a.days}d
-                      </div>
-                    </div>
-                    <div className="upcoming-amt">
-                      {a.bal !== null ? fmt(a.bal) : "—"}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── BillsScreen ──────────────────────────────────────────────────────────────
-
-// ─── Trough Simulation Engine ─────────────────────────────────────────────────
-//
-// Runs a day-by-day simulation over the float window (floatMult × pay cycle).
-// Each day: subtract bills due that day, add paycheck if it lands that day.
-// Returns the full daily balance array, trough day, trough value,
-// and where today sits relative to the expected cycle position.
-//
-// Pay cadence anchors to "today" as the most recent payday
-// (or calculates the next payday from today).
-
-const PAY_DAYS_PER_YEAR = { weekly:52, biweekly:26, semimonthly:24, monthly:12 };
-const PAY_CYCLE_DAYS    = { weekly:7,  biweekly:14, semimonthly:15, monthly:30 };
-
-function runTroughSimulation({ bills, totalBillsBal, netPay, frequency, floatMult, accounts }) {
-  const freq       = frequency || "biweekly";
-  const cycleLen   = PAY_CYCLE_DAYS[freq] || 14;
-  const perYear    = PAY_DAYS_PER_YEAR[freq] || 26;
-  const paycheckAmt = parseFloat(netPay) || 0;
-  const mult       = parseFloat(floatMult) || 1.5;
-
-  // Simulation window = floatMult × one pay cycle, minimum 30 days
-  const windowDays = Math.max(30, Math.ceil(mult * cycleLen) + cycleLen);
-
-  // Build bill events: day-of-month → total amount due
-  const FREQ_MAP = { weekly:52, biweekly:26, semimonthly:24, monthly:12, quarterly:4, annual:1, onetime:0 };
-  const billEvents = {}; // { [dayOfMonth]: amount }
-
-  bills.forEach(b => {
-    const day = b.dueDay;
-    if (!day) return;
-    const myPct = (parseFloat(b.myPct) || 100) / 100;
-    const monthly = (parseFloat(b.amount)||0) * ((FREQ_MAP[b.frequency]||12)/12) * myPct;
-    if (monthly <= 0) return;
-    billEvents[day] = (billEvents[day] || 0) + monthly;
-  });
-
-  // Paycheck lands every cycleLen days from today (day 0 = today)
-  // We assume today is shortly after a payday so day 0 balance = current balance
-  const today = new Date();
-  const todayDom = today.getDate(); // day of month today
-
-  // Simulate day by day
-  let bal = totalBillsBal;
-  const days = [];
-  let lowestBal  = bal;
-  let lowestDay  = 0;
-  let lowestDate = new Date(today);
-
-  for (let d = 0; d < windowDays; d++) {
-    const simDate = new Date(today);
-    simDate.setDate(today.getDate() + d);
-    const dom = simDate.getDate(); // day of month for this simulated day
-
-    // Add paycheck on cycle boundaries (every cycleLen days after day 0)
-    // Day 0 = today (just received paycheck), next on day cycleLen, etc.
-    let paycheckToday = 0;
-    if (d > 0 && d % cycleLen === 0 && paycheckAmt > 0) {
-      paycheckToday = paycheckAmt;
-      bal += paycheckAmt;
-    }
-
-    // Subtract bills due today (by day of month)
-    const billsDue = billEvents[dom] || 0;
-    if (billsDue > 0) bal -= billsDue;
-
-    const dayEntry = {
-      d,
-      date: simDate,
-      dateStr: simDate.toLocaleDateString("en-US", { month:"short", day:"numeric" }),
-      bal: Math.round(bal * 100) / 100,
-      billsDue,
-      paycheckToday,
-      dom,
-    };
-    days.push(dayEntry);
-
-    if (bal < lowestBal) {
-      lowestBal  = bal;
-      lowestDay  = d;
-      lowestDate = simDate;
-    }
-  }
-
-  // Monthly bill total (for zone lines)
-  const monthlyTotal = Object.values(billEvents).reduce((s,v)=>s+v,0);
-
-  // Float target = (monthly bills / paychecks per month) × paychecks in float window
-  // Simplified: monthly × mult (same dollar amount, different meaning)
-  const paychecksPerMonth = perYear / 12;
-  const billsPerPaycheck  = monthlyTotal / paychecksPerMonth;
-  const floatTarget       = billsPerPaycheck * mult * paychecksPerMonth; // = monthlyTotal * mult
-
-  // "Where are you right now in the cycle"
-  // Expected balance at day 0 is totalBillsBal.
-  // The trough depth = totalBillsBal - lowestBal.
-  // How far into the trough today: if today's bal > lowestBal, we haven't hit it yet.
-  // Trough exposure = how much lower the balance WILL get before next paycheck.
-  const troughExposure  = totalBillsBal - lowestBal; // how deep the trough is
-  const troughLowest    = lowestBal;
-  const troughDate      = lowestDate.toLocaleDateString("en-US", { month:"short", day:"numeric" });
-  const cycleBillsTotal = billsPerPaycheck * mult; // bills expected in the float window
-
-  // Zone thresholds (in dollar terms)
-  const safeThresh = floatTarget;           // above this = safe (full float covered)
-  const warnThresh = monthlyTotal;          // above monthly but below float = watch
-  const dangThresh = monthlyTotal * 0.5;   // below half monthly = danger
-
-  // Current zone
-  const zone = totalBillsBal >= safeThresh ? "safe"
-             : totalBillsBal >= warnThresh ? "warning"
-             : "danger";
-  const zoneColor = zone === "safe" ? "#00D4AA" : zone === "warning" ? "#F5C842" : "#FF6B6B";
-  const zoneLabel = zone === "safe" ? "Covered" : zone === "warning" ? "Watch it" : "At risk";
-
-  return {
-    days, monthlyTotal, floatTarget, safeThresh, warnThresh, dangThresh,
-    troughLowest, troughExposure, troughDate, lowestDay,
-    zone, zoneColor, zoneLabel,
-    billsPerPaycheck, paycheckAmt, freq, cycleLen, mult, windowDays,
-  };
-}
-
-// ─── BillsScaleView ──────────────────────────────────────────────────────────
-
-function BillsScaleView({ accounts, bills, latestBalance, dueThresholds, paycheck, billsOverride, onSaveBillsOverride }) {
-  const { billsBanks, totalBillsBal, monthlyTotal } = computeBillsHealth(accounts, bills, latestBalance);
-
-  // Local override for pay settings (pulls from planner as default)
-  const [localNetPay, setLocalNetPay]   = useState(billsOverride?.netPay   ?? paycheck?.netPay   ?? "");
-  const [localFreq,   setLocalFreq]     = useState(billsOverride?.frequency ?? paycheck?.frequency ?? "biweekly");
-
-  // Float multiplier from bills_bank accounts (use first one found, default 1.5)
-  const floatMult = billsBanks[0]?.floatMultiplier ?? 1.5;
-
-  const sim = billsBanks.length > 0 ? runTroughSimulation({
-    bills, totalBillsBal,
-    netPay: localNetPay,
-    frequency: localFreq,
-    floatMult,
-    accounts,
-  }) : null;
-
-  const PAY_FREQS = [
-    { v:"weekly",      l:"Weekly" },
-    { v:"biweekly",    l:"Biweekly (every 2 wks)" },
-    { v:"semimonthly", l:"Semi-monthly (twice/mo)" },
-    { v:"monthly",     l:"Monthly" },
-  ];
-
-  if (billsBanks.length === 0) return (
-    <div className="history-empty">No bills account set up.<br/>Add an account with the Bills role in Accounts.</div>
-  );
-
-  const maxScale = sim ? Math.max(sim.safeThresh * 1.3, totalBillsBal * 1.1, 1) : 1;
-  const currentPct  = sim ? Math.min(100, (totalBillsBal / maxScale) * 100) : 0;
-  const safePct     = sim ? Math.min(100, (sim.safeThresh / maxScale) * 100) : 75;
-  const warnPct     = sim ? Math.min(100, (sim.warnThresh / maxScale) * 100) : 50;
-  const troughPct   = sim ? Math.min(100, Math.max(0, (sim.troughLowest / maxScale) * 100)) : 0;
-
-  // Group days into paycheck cycles for the timeline
-  const cycles = [];
-  if (sim) {
-    let cycle = { start:0, end:sim.cycleLen-1, days:[], paycheckDay:0 };
-    sim.days.forEach((day, i) => {
-      cycle.days.push(day);
-      if ((i+1) % sim.cycleLen === 0 || i === sim.days.length-1) {
-        cycles.push({...cycle});
-        cycle = { start:i+1, end:i+sim.cycleLen, days:[], paycheckDay:i+1 };
-      }
-    });
-  }
-
-  return (
-    <div style={{padding:"0 16px 20px"}}>
-
-      {/* ── Pay settings override ── */}
-      <div style={{background:"#0D1F35",border:"1px solid #1A3A5A",borderRadius:14,padding:16,marginBottom:20}}>
-        <div style={{fontSize:10,fontWeight:600,letterSpacing:"2px",textTransform:"uppercase",color:"#2E4A6A",marginBottom:12}}>
-          Paycheck Settings
-        </div>
-        <div style={{display:"flex",gap:10,marginBottom:10}}>
-          <div style={{flex:1}}>
-            <div style={{fontSize:11,color:"#4A6280",marginBottom:4}}>Net Pay</div>
-            <input className="text-input" style={{padding:"8px 12px",fontSize:14}}
-              placeholder="e.g. 3200" type="number" inputMode="decimal"
-              value={localNetPay}
-              onChange={e=>setLocalNetPay(e.target.value)}
-              onBlur={()=>onSaveBillsOverride({netPay:localNetPay,frequency:localFreq})}/>
-          </div>
-          <div style={{flex:1}}>
-            <div style={{fontSize:11,color:"#4A6280",marginBottom:4}}>Frequency</div>
-            <select className="form-select" style={{padding:"8px 12px",fontSize:13}}
-              value={localFreq}
-              onChange={e=>{setLocalFreq(e.target.value);onSaveBillsOverride({netPay:localNetPay,frequency:e.target.value});}}>
-              {PAY_FREQS.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
-            </select>
-          </div>
-        </div>
-        <div style={{fontSize:11,color:"#2E4A6A"}}>
-          Float × {floatMult} set in Accounts · Pulls from Planner by default
         </div>
       </div>
 
-      {sim && <>
-
-        {/* ── Trough warning card ── */}
-        <div style={{
-          background: sim.troughLowest < 0 ? "#FF6B6B12" : "#111E33",
-          border:`1px solid ${sim.troughLowest < 0 ? "#FF6B6B40" : "#1A2E4A"}`,
-          borderRadius:14, padding:16, marginBottom:16
-        }}>
-          <div style={{fontSize:10,fontWeight:600,letterSpacing:"2px",textTransform:"uppercase",color:"#2E4A6A",marginBottom:10}}>
-            Trough Forecast
-          </div>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-            <div>
-              <div style={{fontSize:13,color:"#C8D8E8",marginBottom:4}}>
-                Lowest expected balance
-              </div>
-              <div style={{fontFamily:"'Space Grotesk',monospace",fontSize:28,fontWeight:700,
-                color:sim.troughLowest>=sim.warnThresh?"#00D4AA":sim.troughLowest>=0?"#F5C842":"#FF6B6B",
-                lineHeight:1}}>
-                {fmt(sim.troughLowest)}
-              </div>
-              <div style={{fontSize:11,color:"#4A6280",marginTop:4}}>
-                Around {sim.troughDate} · day {sim.lowestDay} of simulation
-              </div>
-            </div>
-            <div style={{textAlign:"right"}}>
-              <div style={{fontSize:11,color:"#4A6280",marginBottom:4}}>Trough depth</div>
-              <div style={{fontFamily:"'Space Grotesk',monospace",fontSize:18,fontWeight:600,
-                color: sim.troughExposure > totalBillsBal*0.5 ? "#FF6B6B" : "#F5C842"}}>
-                −{fmt(sim.troughExposure)}
-              </div>
-              <div style={{fontSize:10,color:"#2E4A6A",marginTop:2}}>from current</div>
-            </div>
-          </div>
-          {sim.troughLowest < 0 && (
-            <div style={{marginTop:12,padding:"8px 12px",background:"#FF6B6B18",borderRadius:8,fontSize:12,color:"#FF6B6B"}}>
-              ⚠ With a {sim.mult}× float this account would go negative. Consider raising the float or moving more money in.
-            </div>
-          )}
-          {sim.troughLowest >= 0 && sim.troughLowest < sim.warnThresh && (
-            <div style={{marginTop:12,padding:"8px 12px",background:"#F5C84218",borderRadius:8,fontSize:12,color:"#F5C842"}}>
-              This account gets tight but stays positive. You're betting on no surprises.
-            </div>
-          )}
-          {sim.troughLowest >= sim.warnThresh && (
-            <div style={{marginTop:12,padding:"8px 12px",background:"#00D4AA12",borderRadius:8,fontSize:12,color:"#00D4AA"}}>
-              Your float fully covers the {sim.mult}× window. You have room for variable bills.
-            </div>
-          )}
-        </div>
-
-        {/* ── Scale bar ── */}
-        <div style={{marginBottom:20}}>
-          <div style={{display:"flex",justifyContent:"space-between",alignItems:"baseline",marginBottom:8}}>
-            <span style={{fontSize:11,fontWeight:600,letterSpacing:"1.5px",textTransform:"uppercase",color:"#2E4A6A"}}>
-              Bills Account · Now
-            </span>
-            <span style={{fontFamily:"'Space Grotesk',monospace",fontSize:22,fontWeight:700,color:sim.zoneColor}}>
-              {fmt(totalBillsBal)}
-            </span>
-          </div>
-
-          <div style={{position:"relative",height:32,borderRadius:16,overflow:"hidden",background:"#0D1929",marginBottom:6}}>
-            {/* zone fills */}
-            <div style={{position:"absolute",left:0,top:0,bottom:0,width:`${warnPct}%`,background:"#FF6B6B18"}}/>
-            <div style={{position:"absolute",left:`${warnPct}%`,top:0,bottom:0,width:`${safePct-warnPct}%`,background:"#F5C84212"}}/>
-            <div style={{position:"absolute",left:`${safePct}%`,top:0,bottom:0,right:0,background:"#00D4AA0A"}}/>
-            {/* zone lines */}
-            <div style={{position:"absolute",left:`${warnPct}%`,top:0,bottom:0,width:2,background:"#F5C842",opacity:0.4}}/>
-            <div style={{position:"absolute",left:`${safePct}%`,top:0,bottom:0,width:2,background:"#00D4AA",opacity:0.4}}/>
-            {/* trough marker */}
-            <div style={{position:"absolute",left:`${troughPct}%`,top:2,bottom:2,width:2,background:"#FF6B6B",opacity:0.7,borderRadius:1}}/>
-            <div style={{position:"absolute",left:`${Math.max(0,troughPct-8)}%`,top:10,fontSize:8,color:"#FF6B6B",opacity:0.8,whiteSpace:"nowrap"}}>▼trough</div>
-            {/* current fill */}
-            <div style={{position:"absolute",left:0,top:5,bottom:5,width:`${currentPct}%`,background:sim.zoneColor,borderRadius:10,transition:"width .5s ease"}}/>
-          </div>
-
-          {/* Scale labels */}
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
-            <span style={{fontSize:10,color:"#FF6B6B"}}>At risk</span>
-            <span style={{fontSize:10,color:"#F5C842"}}>Watch it</span>
-            <span style={{fontSize:10,color:"#00D4AA"}}>Covered ({sim.mult}×)</span>
-          </div>
-          <div style={{display:"flex",justifyContent:"space-between"}}>
-            <span style={{fontSize:10,color:"#4A6280"}}>0</span>
-            <span style={{fontSize:10,color:"#4A6280"}}>{fmt(sim.warnThresh)}</span>
-            <span style={{fontSize:10,color:"#4A6280"}}>{fmt(sim.safeThresh)}</span>
-          </div>
-        </div>
-
-        {/* ── Bills account balances ── */}
-        {billsBanks.map(a=>(
-          <div key={a.last4} style={{background:"#111E33",border:"1px solid #1A2E4A",borderRadius:12,padding:"12px 14px",marginBottom:8,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div>
-              <div style={{fontSize:13,fontWeight:500,color:"#C8D8E8"}}>{a.label}</div>
-              <div style={{fontSize:11,color:"#4A6280"}}>•••• {a.last4} · Float ×{a.floatMultiplier||1.5}</div>
-            </div>
-            <div style={{fontFamily:"'Space Grotesk',monospace",fontSize:16,fontWeight:600,color:"#9B88FF"}}>
-              {latestBalance(a.last4)!==null ? fmt(latestBalance(a.last4)) : "—"}
-            </div>
-          </div>
-        ))}
-
-        {/* ── Cycle timeline ── */}
-        <div style={{fontSize:10,fontWeight:600,letterSpacing:"2px",textTransform:"uppercase",color:"#2E4A6A",margin:"20px 0 10px"}}>
-          {sim.mult}× Float Simulation · {sim.days.length} days
-        </div>
-
-        {cycles.slice(0, Math.ceil(sim.mult)+1).map((cycle, ci) => {
-          const billDays = cycle.days.filter(d => d.billsDue > 0);
-          const paycheckDay = cycle.days.find(d => d.paycheckToday > 0);
-          const startBal = ci === 0 ? totalBillsBal : cycles[ci-1].days[cycles[ci-1].days.length-1].bal;
-          const endBal   = cycle.days[cycle.days.length-1].bal;
-          const cycleTrough = Math.min(...cycle.days.map(d=>d.bal));
-          const cycleCol = endBal >= sim.warnThresh ? "#00D4AA" : endBal >= 0 ? "#F5C842" : "#FF6B6B";
-          return (
-            <div key={ci} style={{background:"#111E33",border:"1px solid #1A2E4A",borderRadius:14,padding:"14px 16px",marginBottom:10}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
-                <div>
-                  <div style={{fontSize:13,fontWeight:600,color:"#E8EEF6"}}>
-                    {ci===0 ? "Now" : `Cycle ${ci+1}`} · {cycle.days[0].dateStr}–{cycle.days[cycle.days.length-1].dateStr}
-                  </div>
-                  {paycheckDay && (
-                    <div style={{fontSize:11,color:"#00D4AA",marginTop:2}}>
-                      +{fmt(sim.paycheckAmt)} paycheck on {paycheckDay.dateStr}
-                    </div>
-                  )}
-                </div>
-                <div style={{textAlign:"right"}}>
-                  <div style={{fontSize:11,color:"#4A6280"}}>Ends at</div>
-                  <div style={{fontFamily:"'Space Grotesk',monospace",fontSize:16,fontWeight:600,color:cycleCol}}>{fmt(endBal)}</div>
-                  <div style={{fontSize:10,color:"#2E4A6A",marginTop:1}}>low: {fmt(cycleTrough)}</div>
-                </div>
-              </div>
-              {billDays.length > 0 && (
-                <div style={{borderTop:"1px solid #1A2E4A",paddingTop:8}}>
-                  {billDays.map((d,j)=>(
-                    <div key={j} style={{display:"flex",justifyContent:"space-between",padding:"3px 0"}}>
-                      <span style={{fontSize:12,color:"#4A6280"}}>{d.dateStr}</span>
-                      <span style={{fontSize:12,color:"#F5A623"}}>−{fmt(d.billsDue)}</span>
-                      <span style={{fontFamily:"'Space Grotesk',monospace",fontSize:12,
-                        color:d.bal>=sim.warnThresh?"#C8D8E8":d.bal>=0?"#F5C842":"#FF6B6B"}}>{fmt(d.bal)}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {billDays.length === 0 && (
-                <div style={{fontSize:12,color:"#2E4A6A",borderTop:"1px solid #1A2E4A",paddingTop:8}}>No bills due this cycle</div>
-              )}
-            </div>
-          );
-        })}
-
-        {billDueDays(bills) === 0 && (
-          <div style={{fontSize:13,color:"#2E4A6A",textAlign:"center",padding:"16px 0"}}>
-            Set due days on your bills to see the cycle timeline.
-          </div>
-        )}
-      </>}
-    </div>
-  );
-}
-
-function billDueDays(bills) {
-  return bills.filter(b=>b.dueDay).length;
-}
-const FREQ_LABELS = { weekly:"Weekly", biweekly:"Biweekly", semimonthly:"Semi-monthly",
-                      monthly:"Monthly", quarterly:"Quarterly", annual:"Annual", onetime:"One-time" };
-const FREQ_PER_YEAR_MAP = { weekly:52, biweekly:26, semimonthly:24, monthly:12, quarterly:4, annual:1, onetime:0 };
-
-function monthlyEquiv(bill) {
-  const annual = (parseFloat(bill.amount) || 0) * (FREQ_PER_YEAR_MAP[bill.frequency] || 12);
-  return annual / 12;
-}
-
-const EMPTY_BILL = {
-  name:"", amount:"", frequency:"monthly", myPct:"100", theirPct:"0",
-  fundingAcct:"", paymentAcct:"", creditCard:"", rewardMult:"",
-  isEF:false, isRetire:false, isFixed:true, isAutopay:false, notes:"", dueDay:null
-};
-
-function BillForm({ bill, accounts, onSave, onCancel }) {
-  const [b, setB] = useState(bill);
-  function set(k, v) { setB(prev => ({...prev, [k]: v})); }
-  const Toggle = ({k}) => (
-    <button className={`toggle ${b[k] ? "on" : "off"}`} onClick={() => set(k, !b[k])}>
-      <div className="toggle-knob"/>
-    </button>
-  );
-  const allAccts = accounts;
-  return (
-    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onCancel()}>
-      <div className="modal">
-        <div className="modal-title">{bill.id ? "Edit Bill" : "Add Bill"}</div>
-
-        <div className="form-group">
-          <label className="form-label">Bill Name</label>
-          <input className="form-input" placeholder="e.g. Netflix" value={b.name} onChange={e=>set("name",e.target.value)}/>
-        </div>
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Amount</label>
-            <input className="form-input" placeholder="0.00" type="number" inputMode="decimal" value={b.amount} onChange={e=>set("amount",e.target.value)}/>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Frequency</label>
-            <select className="form-select" value={b.frequency} onChange={e=>set("frequency",e.target.value)}>
-              {Object.entries(FREQ_LABELS).map(([k,v])=><option key={k} value={k}>{v}</option>)}
-            </select>
-          </div>
-        </div>
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">My %</label>
-            <input className="form-input" placeholder="100" type="number" inputMode="numeric" value={b.myPct} onChange={e=>set("myPct",e.target.value)}/>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Their %</label>
-            <input className="form-input" placeholder="0" type="number" inputMode="numeric" value={b.theirPct} onChange={e=>set("theirPct",e.target.value)}/>
-          </div>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Funding Account (deposit lands here)</label>
-          <select className="form-select" value={b.fundingAcct} onChange={e=>set("fundingAcct",e.target.value)}>
-            <option value="">None</option>
-            {allAccts.map(a=><option key={a.last4} value={a.last4}>{a.label} (•{a.last4})</option>)}
-          </select>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Payment Account (pays the bill)</label>
-          <select className="form-select" value={b.paymentAcct} onChange={e=>set("paymentAcct",e.target.value)}>
-            <option value="">None</option>
-            {allAccts.map(a=><option key={a.last4} value={a.last4}>{a.label} (•{a.last4})</option>)}
-          </select>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Credit Card Used (optional)</label>
-          <select className="form-select" value={b.creditCard} onChange={e=>set("creditCard",e.target.value)}>
-            <option value="">None</option>
-            {accounts.filter(a=>a.role==="credit_card").map(a=><option key={a.last4} value={a.last4}>{a.label} (•{a.last4})</option>)}
-          </select>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Reward Multiplier</label>
-          <input className="form-input" placeholder="e.g. 3x travel" value={b.rewardMult} onChange={e=>set("rewardMult",e.target.value)}/>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Notes</label>
-          <input className="form-input" placeholder="Optional notes" value={b.notes} onChange={e=>set("notes",e.target.value)}/>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Due Day of Month</label>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            <input className="form-input" style={{maxWidth:100}} placeholder="e.g. 15"
-              type="number" inputMode="numeric" min="1" max="31"
-              value={b.dueDay??""} onChange={e=>set("dueDay", e.target.value ? parseInt(e.target.value) : null)}/>
-            <span style={{fontSize:13,color:"#4A6280"}}>of each month</span>
-          </div>
-        </div>
-        <div className="form-toggle-row"><span className="form-toggle-label">Fixed (not variable)</span><Toggle k="isFixed"/></div>
-        <div className="form-toggle-row"><span className="form-toggle-label">Autopay</span><Toggle k="isAutopay"/></div>
-        <div className="form-toggle-row"><span className="form-toggle-label">Emergency Fund Expense</span><Toggle k="isEF"/></div>
-        <div className="form-toggle-row"><span className="form-toggle-label">Retirement Expense</span><Toggle k="isRetire"/></div>
-
-        <button className="form-save-btn" onClick={()=>onSave(b)}>Save Bill</button>
-        <button className="form-cancel-btn" onClick={onCancel}>Cancel</button>
-      </div>
-    </div>
-  );
-}
-
-function BillsScreen({ bills, accounts, onAddBill, onEditBill, onDeleteBill, latestBalance, dueThresholds, paycheck, onSavePaycheck }) {
-  const [showForm, setShowForm] = useState(false);
-  const [editingBill, setEditingBill] = useState(null);
-
-  function handleSave(b) {
-    if (b.id) onEditBill(b); else onAddBill(b);
-    setShowForm(false); setEditingBill(null);
-  }
-
-  const totalMonthly = bills.reduce((s,b) => s + monthlyEquiv(b) * ((parseFloat(b.myPct)||100)/100), 0);
-
-  const [viewMode, setViewMode] = useState("scale");
-
-  return (
-    <div className="screen">
-      <div className="header">
-        <div className="header-label">Bills</div>
-        <div style={{fontFamily:"'Space Grotesk',sans-serif", fontSize:16, fontWeight:700, color:"#E8EEF6"}}>
-          {fmt(totalMonthly)}<span style={{fontSize:11,color:"#4A6280",fontWeight:400}}>/mo</span>
-        </div>
-      </div>
-
-      <div className="view-toggle">
-        <button className={`view-btn ${viewMode==="scale"?"active":""}`} onClick={()=>setViewMode("scale")}>◉ Scale</button>
-        <button className={`view-btn ${viewMode==="planner"?"active":""}`} onClick={()=>setViewMode("planner")}>⊟ Planner</button>
-        <button className={`view-btn ${viewMode==="tile"?"active":""}`} onClick={()=>setViewMode("tile")}>⊞ Tiles</button>
-        <button className={`view-btn ${viewMode==="list"?"active":""}`} onClick={()=>setViewMode("list")}>≡ List</button>
-      </div>
-
-      {bills.length === 0 && (
-        <div className="history-empty">No bills yet.<br/>Tap + to add your first bill.</div>
-      )}
-
-      {viewMode === "scale" && (
-        <BillsScaleView accounts={accounts} bills={bills} latestBalance={latestBalance} dueThresholds={dueThresholds}/>
-      )}
-      {viewMode === "planner" && (
-        <PlannerScreen bills={bills} paycheck={paycheck} onSavePaycheck={onSavePaycheck} embedded={true}/>
-      )}
-      {viewMode === "tile" && (
-        <div className="bill-list">
-          {bills.map(bill => {
-            const monthly = monthlyEquiv(bill) * ((parseFloat(bill.myPct)||100)/100);
+      {/* ── Player chips ── */}
+      {(!isSolo) && (
+        <div style={{flexShrink:0,display:"flex",gap:6,justifyContent:"center",padding:"8px 16px 0",flexWrap:"wrap"}}>
+          {players.map((name,i)=>{
+            const done  = isLowest && playersDone.includes(i);
+            const elim  = !isLowest && eliminated.includes(i);
+            const active= i===currentPlayer;
             return (
-              <div className="bill-card" key={bill.id}>
-                <div className="bill-card-top">
-                  <div>
-                    <div className="bill-name">{bill.name}</div>
-                    <div className="bill-meta">
-                      {FREQ_LABELS[bill.frequency]} · {bill.myPct}% my share
-                      {bill.fundingAcct && ` · Fund: •${bill.fundingAcct}`}
-                      {bill.paymentAcct && ` → Pay: •${bill.paymentAcct}`}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="bill-amount">{fmt(parseFloat(bill.amount)||0)}</div>
-                    <div className="bill-amount-sub">{fmt(monthly)}/mo</div>
-                  </div>
-                </div>
-                <div className="bill-tags">
-                  {bill.isAutopay && <span className="bill-tag tag-auto">Autopay</span>}
-                  {bill.isFixed   && <span className="bill-tag tag-fixed">Fixed</span>}
-                  {!bill.isFixed  && <span className="bill-tag tag-var">Variable</span>}
-                  {bill.isEF      && <span className="bill-tag tag-ef">Emergency Fund</span>}
-                  {bill.isRetire  && <span className="bill-tag tag-retire">Retirement</span>}
-                  {bill.rewardMult && <span className="bill-tag" style={{background:"#F5C84218",color:"#F5C842"}}>{bill.rewardMult}</span>}
-                </div>
-                <div className="bill-actions">
-                  <button className="bill-action-btn btn-edit" onClick={()=>{setEditingBill(bill);setShowForm(true);}}>Edit</button>
-                  <button className="bill-action-btn btn-delete" onClick={()=>onDeleteBill(bill.id)}>Remove</button>
-                </div>
+              <div key={i} style={{
+                padding:"4px 12px",borderRadius:20,fontSize:11,
+                background:active?t.accentDim:t.surface,
+                border:`1.5px solid ${elim?t.danger:active?t.accent:t.surfaceBorder}`,
+                color:elim?t.danger:done?t.textDim:active?t.textBright:t.textMid,
+                fontWeight:active?"bold":"normal",
+                textDecoration:(done||elim)?"line-through":"none",
+              }}>
+                {name}{done?` (${calcScore(playerBoards[i])})` : ""}
               </div>
             );
           })}
         </div>
       )}
 
-      {viewMode === "list" && (
-        <div className="bills-table-wrap">
-          <table className="bills-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Amount</th>
-                <th>Freq</th>
-                <th>My %</th>
-                <th>/mo</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {bills.map(bill => {
-                const monthly = monthlyEquiv(bill) * ((parseFloat(bill.myPct)||100)/100);
-                return (
-                  <tr key={bill.id}>
-                    <td>
-                      <input className="tbl-input" defaultValue={bill.name}
-                        onBlur={e=>onEditBill({...bill,name:e.target.value})}/>
-                    </td>
-                    <td>
-                      <input className="tbl-input" style={{width:70}} defaultValue={bill.amount} type="number"
-                        onBlur={e=>onEditBill({...bill,amount:e.target.value})}/>
-                    </td>
-                    <td>
-                      <select style={{background:"transparent",border:"none",color:"#C8D8E8",fontSize:12,fontFamily:"'DM Sans',sans-serif",cursor:"pointer"}}
-                        value={bill.frequency} onChange={e=>onEditBill({...bill,frequency:e.target.value})}>
-                        {Object.entries(FREQ_LABELS).map(([k,v])=><option key={k} value={k}>{v.split(" ")[0]}</option>)}
-                      </select>
-                    </td>
-                    <td>
-                      <input className="tbl-input" style={{width:44}} defaultValue={bill.myPct} type="number"
-                        onBlur={e=>onEditBill({...bill,myPct:e.target.value})}/>
-                    </td>
-                    <td style={{color:"#4A6280",fontFamily:"'Space Grotesk',monospace",fontSize:13}}>{fmt(monthly)}</td>
-                    <td>
-                      <button style={{background:"none",border:"none",color:"#FF6B6B",cursor:"pointer",fontSize:14}}
-                        onClick={()=>onDeleteBill(bill.id)}>✕</button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <button className="fab" onClick={()=>{setEditingBill(null);setShowForm(true);}}>+</button>
-
-      {showForm && (
-        <BillForm
-          bill={editingBill || EMPTY_BILL}
-          accounts={accounts}
-          onSave={handleSave}
-          onCancel={()=>{setShowForm(false);setEditingBill(null);}}
-        />
-      )}
-    </div>
-  );
-}
-
-// ─── PlannerScreen ────────────────────────────────────────────────────────────
-
-const FREQ_OPTIONS = [
-  {v:"weekly",       l:"Weekly"},
-  {v:"biweekly",     l:"Biweekly (every 2 weeks)"},
-  {v:"semimonthly",  l:"Semi-monthly (twice/month)"},
-  {v:"monthly",      l:"Monthly"},
-];
-
-function PlannerScreen({ bills, paycheck, onSavePaycheck, embedded=false }) {
-  const [netPay, setNetPay]     = useState(paycheck.netPay || "");
-  const [freq,   setFreq]       = useState(paycheck.frequency || "biweekly");
-
-  const FREQ_PER_YEAR = { weekly:52, biweekly:26, semimonthly:24, monthly:12 };
-  const perYear = FREQ_PER_YEAR[freq] || 26;
-  const net = parseFloat(netPay) || 0;
-
-  function reservePerPaycheck(bill) {
-    const myPct  = parseFloat(bill.myPct) || 100;
-    const annual = (parseFloat(bill.amount) || 0) * (FREQ_PER_YEAR_MAP[bill.frequency] || 12) * (myPct / 100);
-    return annual / perYear;
-  }
-
-  const lineItems = bills.map(b => ({ ...b, reserve: reservePerPaycheck(b) }))
-                         .filter(b => b.reserve > 0)
-                         .sort((a,b) => b.reserve - a.reserve);
-  const totalReserve = lineItems.reduce((s,b) => s + b.reserve, 0);
-  const remaining    = net - totalReserve;
-
-  function handleSave() { onSavePaycheck({ netPay, frequency: freq }); }
-
-  return (
-    <div className={embedded?"":"screen"}>
-      {!embedded && <div className="screen-title">Paycheck Planner</div>}
-
-      <div style={{padding:"0 16px", marginBottom:16}}>
-        <div className="form-group">
-          <label className="form-label">Net Pay (take-home)</label>
-          <input className="form-input" placeholder="0.00" type="number" inputMode="decimal"
-            value={netPay} onChange={e=>setNetPay(e.target.value)} onBlur={handleSave}/>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Pay Frequency</label>
-          <select className="form-select" value={freq} onChange={e=>{setFreq(e.target.value); setTimeout(handleSave,50);}}>
-            {FREQ_OPTIONS.map(o=><option key={o.v} value={o.v}>{o.l}</option>)}
-          </select>
-        </div>
-      </div>
-
-      {net > 0 && (
-        <>
-          <div className="planner-hero">
-            <div className="planner-row">
-              <span className="planner-lbl">Paycheck</span>
-              <span className="planner-val">{fmt(net)}</span>
-            </div>
-            <div className="planner-row">
-              <span className="planner-lbl">Reserved for bills</span>
-              <span className="planner-val" style={{color:"#F5A623"}}>−{fmt(totalReserve)}</span>
-            </div>
-            <div className="planner-row">
-              <span className="planner-lbl">Projected Safe to Spend</span>
-              <span className="planner-val" style={{color: remaining>=0?"#00D4AA":"#FF6B6B"}}>{fmt(remaining)}</span>
-            </div>
-          </div>
-
-          <div className="section-label" style={{marginTop:8}}>Reserve Breakdown</div>
-          <div className="planner-section">
-            {lineItems.map(b => (
-              <div className="planner-bill-row" key={b.id}>
-                <div>
-                  <div className="planner-bill-name">{b.name}</div>
-                  <div className="planner-bill-sub">{FREQ_LABELS[b.frequency]} · {b.myPct}% my share</div>
-                </div>
-                <div className="planner-bill-amt">{fmt(b.reserve)}</div>
-              </div>
-            ))}
-          </div>
-        </>
-      )}
-
-      {net === 0 && (
-        <div className="history-empty">Enter your take-home pay above<br/>to see your reserve plan.</div>
-      )}
-    </div>
-  );
-}
-
-// ─── RoadmapScreen ────────────────────────────────────────────────────────────
-
-const DEFAULT_ROADMAP = [
-  { id:1,  label:"Starter Emergency Fund",          status:"current", completedAt:undefined },
-  { id:2,  label:"Planned Expense Reserve",         status:"future",  completedAt:undefined },
-  { id:3,  label:"Separate Planned Expense Account",status:"future",  completedAt:undefined },
-  { id:4,  label:"Pay Off Debt",                    status:"future",  completedAt:undefined },
-  { id:5,  label:"High Yield Savings",              status:"future",  completedAt:undefined },
-  { id:6,  label:"Three Month Emergency Fund",      status:"future",  completedAt:undefined },
-  { id:7,  label:"Variable Expense Reserve",        status:"future",  completedAt:undefined },
-  { id:8,  label:"Company Match",                   status:"future",  completedAt:undefined },
-  { id:9,  label:"Max HSA",                         status:"future",  completedAt:undefined },
-  { id:10, label:"Open Roth IRA",                   status:"future",  completedAt:undefined },
-  { id:11, label:"Open Traditional IRA",            status:"future",  completedAt:undefined },
-  { id:12, label:"Open Brokerage",                  status:"future",  completedAt:undefined },
-  { id:13, label:"Max Roth IRA",                    status:"future",  completedAt:undefined },
-  { id:14, label:"Investment Milestone",            status:"future",  completedAt:undefined },
-  { id:15, label:"Max 401(k)",                      status:"future",  completedAt:undefined },
-  { id:16, label:"Mega Backdoor Roth",              status:"future",  completedAt:undefined },
-];
-
-// ─── Compact Roadmap (kata current/target condition style) ────────────────────
-
-function KataRoadmap({ roadmap, onUpdateRoadmap }) {
-  const [showAdd,    setShowAdd]    = useState(false);
-  const [newLabel,   setNewLabel]   = useState("");
-  const [editId,     setEditId]     = useState(null);
-  const [editVal,    setEditVal]    = useState("");
-  const [editDateId, setEditDateId] = useState(null);
-  const [editDateVal,setEditDateVal]= useState("");
-
-  const doneSteps    = roadmap.filter(s=>s.status==="done");
-  const currentStep  = roadmap.find(s=>s.status==="current");
-  const futureSteps  = roadmap.filter(s=>s.status==="future");
-  const nextStep     = futureSteps[0];
-  const doneCount    = doneSteps.length;
-  const total        = roadmap.length;
-
-  function markDone(id) {
-    const d = new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
-    onUpdateRoadmap(roadmap.map(s=>s.id===id?{...s,status:"done",completedAt:s.completedAt||d}:s));
-  }
-  function setStatus(id,status) {
-    onUpdateRoadmap(roadmap.map(s=>s.id===id?{...s,status,completedAt:status==="done"?(s.completedAt||new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"})):undefined}:s));
-  }
-  function moveStep(id,dir) {
-    const steps=[...roadmap];
-    const idx=steps.findIndex(s=>s.id===id);
-    const swap=dir==="up"?idx-1:idx+1;
-    if(swap<0||swap>=steps.length)return;
-    [steps[idx],steps[swap]]=[steps[swap],steps[idx]];
-    onUpdateRoadmap(steps);
-  }
-  function deleteStep(id){onUpdateRoadmap(roadmap.filter(s=>s.id!==id));}
-  function addStep(){
-    if(!newLabel.trim())return;
-    onUpdateRoadmap([...roadmap,{id:Date.now(),label:newLabel.trim(),status:"future"}]);
-    setNewLabel("");setShowAdd(false);
-  }
-  function saveEdit(id){onUpdateRoadmap(roadmap.map(s=>s.id===id?{...s,label:editVal}:s));setEditId(null);}
-  function saveDate(id){onUpdateRoadmap(roadmap.map(s=>s.id===id?{...s,completedAt:editDateVal}:s));setEditDateId(null);}
-
-  const pct = total > 0 ? Math.round((doneCount/total)*100) : 0;
-
-  return (
-    <div className="screen">
-      <div className="header">
-        <div className="header-label">Roadmap</div>
-        <div style={{fontSize:13,color:"#4A6280"}}>{doneCount}/{total} done</div>
-      </div>
-
-      {/* ── Kata board: current condition → challenge → target condition ── */}
-      <div style={{padding:"0 16px 16px"}}>
-
-        {/* Progress bar */}
-        <div style={{marginBottom:16}}>
-          <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-            <span style={{fontSize:11,color:"#4A6280",letterSpacing:"1px",textTransform:"uppercase"}}>Overall Progress</span>
-            <span style={{fontSize:13,fontFamily:"'Space Grotesk',monospace",color:"#00D4AA",fontWeight:700}}>{pct}%</span>
-          </div>
-          <div className="progress-bar" style={{height:8}}>
-            <div className="progress-fill" style={{width:`${pct}%`}}/>
-          </div>
-        </div>
-
-        {/* Three-panel kata board */}
-        <div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,marginBottom:20}}>
-
-          {/* Current Condition */}
-          <div style={{background:"#111E33",border:"1px solid #1A2E4A",borderRadius:14,padding:14}}>
-            <div style={{fontSize:9,fontWeight:700,letterSpacing:"2px",textTransform:"uppercase",color:"#2E4A6A",marginBottom:8}}>Current</div>
-            {currentStep ? (
-              <>
-                <div style={{fontSize:14,fontWeight:600,color:"#E8EEF6",lineHeight:1.3,marginBottom:6}}>{currentStep.label}</div>
-                <span className="step-badge badge-current" style={{fontSize:9}}>In progress</span>
-              </>
-            ) : (
-              <div style={{fontSize:13,color:"#2E4A6A"}}>Not set</div>
-            )}
-          </div>
-
-          {/* Arrow + challenge */}
-          <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:4}}>
-            <div style={{fontSize:20,color:"#2E4A6A"}}>→</div>
-            <div style={{fontSize:9,color:"#2E4A6A",textAlign:"center",letterSpacing:"1px",textTransform:"uppercase"}}>Next</div>
-          </div>
-
-          {/* Target Condition */}
-          <div style={{background:"#0D1F35",border:"1px solid #00D4AA30",borderRadius:14,padding:14}}>
-            <div style={{fontSize:9,fontWeight:700,letterSpacing:"2px",textTransform:"uppercase",color:"#00D4AA60",marginBottom:8}}>Target</div>
-            {nextStep ? (
-              <>
-                <div style={{fontSize:14,fontWeight:600,color:"#C8D8E8",lineHeight:1.3,marginBottom:6}}>{nextStep.label}</div>
-                <span style={{fontSize:9,fontWeight:600,letterSpacing:"1px",background:"#00D4AA15",color:"#00D4AA60",padding:"2px 6px",borderRadius:8}}>Upcoming</span>
-              </>
-            ) : doneCount === total && total > 0 ? (
-              <div style={{fontSize:13,color:"#00D4AA",fontWeight:600}}>All done! 🎉</div>
-            ) : (
-              <div style={{fontSize:13,color:"#2E4A6A"}}>Add milestones below</div>
-            )}
-          </div>
-        </div>
-
-        {/* Last completed */}
-        {doneSteps.length > 0 && (
-          <div style={{background:"#111E33",border:"1px solid #1A2E4A",borderRadius:12,padding:"12px 14px",marginBottom:16,
-            display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-            <div>
-              <div style={{fontSize:9,color:"#4A6280",letterSpacing:"1px",textTransform:"uppercase",marginBottom:4}}>Last Completed</div>
-              <div style={{fontSize:14,color:"#00D4AA",fontWeight:600}}>{doneSteps[doneSteps.length-1].label}</div>
-            </div>
-            <div style={{fontSize:18,color:"#00D4AA"}}>✓</div>
-          </div>
-        )}
-      </div>
-
-      {/* ── All milestones list ── */}
-      <div className="section-label">All Milestones</div>
-      <div style={{padding:"0 16px 100px"}}>
-        {roadmap.map((step,idx)=>{
-          const isLast = idx===roadmap.length-1;
-          const col = step.status==="done"?"#00D4AA":step.status==="current"?"#E8EEF6":"#2E4A6A";
-          return (
-            <div key={step.id} style={{
-              background:"#111E33",
-              border:`1px solid ${step.status==="current"?"#00D4AA40":"#1A2E4A"}`,
-              borderRadius:12,padding:"12px 14px",marginBottom:6,
-              opacity:step.status==="future"?0.65:1
-            }}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",gap:8}}>
-                <div style={{flex:1}}>
-                  {editId===step.id?(
-                    <div style={{display:"flex",gap:8,marginBottom:4}}>
-                      <input className="text-input" style={{flex:1,padding:"6px 10px",fontSize:14}}
-                        value={editVal} onChange={e=>setEditVal(e.target.value)}/>
-                      <button className="add-btn" style={{padding:"6px 12px",fontSize:13}} onClick={()=>saveEdit(step.id)}>Save</button>
-                    </div>
-                  ):(
-                    <div style={{fontSize:14,fontWeight:600,color:col,marginBottom:3}}>{step.label}</div>
-                  )}
-                  {step.status==="done"&&(
-                    <div style={{fontSize:11,color:"#4A6280"}}>
-                      {editDateId===step.id?(
-                        <input className="tbl-input" style={{width:130,fontSize:11,display:"inline"}}
-                          value={editDateVal} onChange={e=>setEditDateVal(e.target.value)}
-                          onBlur={()=>saveDate(step.id)} onKeyDown={e=>e.key==="Enter"&&saveDate(step.id)} autoFocus/>
-                      ):(
-                        <span className="roadmap-edit-date"
-                          onClick={()=>{setEditDateId(step.id);setEditDateVal(step.completedAt||"");}}>
-                          ✓ {step.completedAt||"tap to set date"}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                  {step.status==="current"&&<span className="step-badge badge-current" style={{fontSize:9}}>Current</span>}
-                </div>
-                <div style={{display:"flex",gap:4,flexWrap:"wrap",justifyContent:"flex-end"}}>
-                  {step.status!=="done"&&<button className="roadmap-btn rmbtn-done" onClick={()=>markDone(step.id)}>✓</button>}
-                  {step.status!=="current"&&<button className="roadmap-btn rmbtn-current" onClick={()=>setStatus(step.id,"current")}>Current</button>}
-                  {idx>0&&<button className="roadmap-btn rmbtn-up" onClick={()=>moveStep(step.id,"up")}>↑</button>}
-                  {!isLast&&<button className="roadmap-btn rmbtn-down" onClick={()=>moveStep(step.id,"down")}>↓</button>}
-                  {editId!==step.id&&<button className="roadmap-btn" style={{background:"#1A2E4A",color:"#C8D8E8"}}
-                    onClick={()=>{setEditId(step.id);setEditVal(step.label);}}>✎</button>}
-                  <button className="roadmap-btn rmbtn-del" onClick={()=>deleteStep(step.id)}>✕</button>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-
-        {showAdd?(
-          <div style={{display:"flex",gap:8,marginTop:8}}>
-            <input className="text-input" style={{flex:1}} placeholder="New milestone…"
-              value={newLabel} onChange={e=>setNewLabel(e.target.value)}/>
-            <button className="add-btn" onClick={addStep}>Add</button>
-          </div>
-        ):(
-          <button className="form-save-btn" style={{marginTop:8}} onClick={()=>setShowAdd(true)}>+ Add Milestone</button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-
-// ─── InvestScreen (inside SettingsScreen tab) ─────────────────────────────────
-
-const EMPTY_INVEST = { name:"", current:"", goal:"", targetType:"date", targetDate:"", targetAge:"", notes:"" };
-
-function InvestForm({ inv, onSave, onCancel }) {
-  const [v, setV] = useState(inv);
-  function set(k, val) { setV(prev=>({...prev,[k]:val})); }
-  return (
-    <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onCancel()}>
-      <div className="modal">
-        <div className="modal-title">{inv.id ? "Edit Goal" : "Add Investment Goal"}</div>
-        <div className="form-group">
-          <label className="form-label">Account Name</label>
-          <input className="form-input" placeholder="e.g. Roth IRA" value={v.name} onChange={e=>set("name",e.target.value)}/>
-        </div>
-        <div className="form-row">
-          <div className="form-group">
-            <label className="form-label">Current Balance</label>
-            <input className="form-input" placeholder="0.00" type="number" inputMode="decimal" value={v.current} onChange={e=>set("current",e.target.value)}/>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Goal Balance</label>
-            <input className="form-input" placeholder="0.00" type="number" inputMode="decimal" value={v.goal} onChange={e=>set("goal",e.target.value)}/>
-          </div>
-        </div>
-        <div className="form-group">
-          <label className="form-label">Target Type</label>
-          <select className="form-select" value={v.targetType} onChange={e=>set("targetType",e.target.value)}>
-            <option value="date">Target Date</option>
-            <option value="age">Target Age</option>
-          </select>
-        </div>
-        {v.targetType === "date" && (
-          <div className="form-group">
-            <label className="form-label">Target Date</label>
-            <input className="form-input" placeholder="e.g. Dec 2035" value={v.targetDate} onChange={e=>set("targetDate",e.target.value)}/>
-          </div>
-        )}
-        {v.targetType === "age" && (
-          <div className="form-group">
-            <label className="form-label">Target Age</label>
-            <input className="form-input" placeholder="e.g. 65" type="number" inputMode="numeric" value={v.targetAge} onChange={e=>set("targetAge",e.target.value)}/>
-          </div>
-        )}
-        <div className="form-group">
-          <label className="form-label">Notes</label>
-          <input className="form-input" placeholder="Optional" value={v.notes} onChange={e=>set("notes",e.target.value)}/>
-        </div>
-        <button className="form-save-btn" onClick={()=>onSave(v)}>Save Goal</button>
-        <button className="form-cancel-btn" onClick={onCancel}>Cancel</button>
-      </div>
-    </div>
-  );
-}
-
-function InvestScreen({ investments, onAddInvest, onEditInvest, onDeleteInvest }) {
-  const [showForm, setShowForm] = useState(false);
-  const [editing,  setEditing]  = useState(null);
-
-  function handleSave(v) {
-    if (v.id) onEditInvest(v); else onAddInvest(v);
-    setShowForm(false); setEditing(null);
-  }
-
-  return (
-    <div className="screen">
-      <div className="screen-title">Investment Goals</div>
-
-      {investments.length === 0 && (
-        <div className="history-empty">No investment goals yet.<br/>Tap + to add one.</div>
-      )}
-
-      <div className="invest-list">
-        {investments.map(inv => {
-          const cur  = parseFloat(inv.current) || 0;
-          const goal = parseFloat(inv.goal) || 0;
-          const pct  = goal > 0 ? Math.min(100, Math.round((cur/goal)*100)) : 0;
-          const target = inv.targetType === "age" ? `By age ${inv.targetAge}` : inv.targetDate || "No target set";
-          return (
-            <div className="invest-card" key={inv.id}>
-              <div className="invest-top">
-                <div>
-                  <div className="invest-name">{inv.name}</div>
-                  <div className="invest-date">{target}</div>
-                </div>
-                <div className="invest-pct">{pct}%</div>
-              </div>
-              <div className="invest-track">
-                <div><div className="invest-track-lbl">Current</div><div className="invest-track-val">{fmt(cur)}</div></div>
-                <div style={{textAlign:"right"}}><div className="invest-track-lbl">Goal</div><div className="invest-track-val">{fmt(goal)}</div></div>
-              </div>
-              <div className="progress-bar">
-                <div className="progress-fill" style={{width:`${pct}%`}}/>
-              </div>
-              {inv.notes && <div style={{fontSize:12,color:"#4A6280",marginBottom:10}}>{inv.notes}</div>}
-              <div className="invest-actions">
-                <button className="bill-action-btn btn-edit" onClick={()=>{setEditing(inv);setShowForm(true);}}>Edit</button>
-                <button className="bill-action-btn btn-delete" onClick={()=>onDeleteInvest(inv.id)}>Remove</button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <button className="fab" onClick={()=>{setEditing(null);setShowForm(true);}}>+</button>
-
-      {showForm && (
-        <InvestForm
-          inv={editing || EMPTY_INVEST}
-          onSave={handleSave}
-          onCancel={()=>{setShowForm(false);setEditing(null);}}
-        />
-      )}
-    </div>
-  );
-}
-
-
-// ─── AccountsScreen ───────────────────────────────────────────────────────────
-
-const ROLE_COLORS = { spending_bank:"#00D4AA", bills_bank:"#9B88FF", credit_card:"#F5A623", holding:"#4A6280" };
-const ROLE_LABELS = { spending_bank:"Spending", bills_bank:"Bills", credit_card:"Credit Card", holding:"Holding" };
-
-function AccountsScreen({ accounts, snapshots, onSetRole, onReorder,
-                          onRemoveAccount, onAddAccount, onSetDueDay, latestBalance }) {
-  const [newLabel, setNewLabel] = useState("");
-  const [newLast4, setNewLast4] = useState("");
-  const [newRole,  setNewRole]  = useState("spending_bank");
-  const [expandId, setExpandId] = useState(null);
-
-  const spendingBanks = accounts.filter(a => a.role === "spending_bank").sort((a,b) => (a.incomeRank??99)-(b.incomeRank??99));
-  const billsBanks    = accounts.filter(a => a.role === "bills_bank");
-  const creditCards   = accounts.filter(a => a.role === "credit_card");
-  const holdingAccts  = accounts.filter(a => a.role === "holding");
-  const incomeAccts   = spendingBanks;
-  const spendingAccts = creditCards;
-
-  function handleAdd() {
-    const l4 = newLast4.replace(/\D/g,"").slice(-4);
-    if (l4.length !== 4 || !newLabel.trim()) return;
-    onAddAccount(l4, newLabel.trim(), newRole);
-    setNewLabel(""); setNewLast4("");
-  }
-
-  function AccountRow({ a, i, totalInRole }) {
-    const bal = latestBalance(a.last4);
-    const color = ROLE_COLORS[a.role] || "#4A6280";
-    const expanded = expandId === a.last4;
-    return (
-      <div style={{
-        background:"#111E33", border:`1px solid ${expanded ? color+"60" : "#1A2E4A"}`,
-        borderRadius:14, marginBottom:8, overflow:"hidden",
-        transition:"border-color .2s"
-      }}>
-        {/* Main row */}
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 16px",cursor:"pointer"}}
-          onClick={()=>setExpandId(expanded ? null : a.last4)}>
-          <div style={{display:"flex",alignItems:"center",gap:12}}>
-            <div style={{width:10,height:10,borderRadius:"50%",background:color,flexShrink:0}}/>
-            <div>
-              <div style={{fontSize:14,fontWeight:600,color:"#E8EEF6"}}>{a.label}</div>
-              <div style={{fontSize:12,color:"#4A6280",marginTop:2}}>
-                •••• {a.last4}
-                <span style={{marginLeft:8,fontSize:10,fontWeight:600,padding:"1px 6px",borderRadius:8,
-                  background:color+"20",color:color}}>{ROLE_LABELS[a.role]}</span>
-                {a.role==="spending_bank" && <span style={{marginLeft:6,fontSize:10,color:"#2E4A6A"}}>{rankName(a.incomeRank)}</span>}
-              </div>
-            </div>
-          </div>
-          <div style={{display:"flex",alignItems:"center",gap:10}}>
-            {bal !== null
-              ? <div style={{fontFamily:"'Space Grotesk',monospace",fontSize:16,fontWeight:600,color:"#E8EEF6"}}>{fmt(bal)}</div>
-              : <div style={{fontSize:13,color:"#2E4A6A"}}>—</div>}
-            <div style={{fontSize:12,color:"#2E4A6A"}}>{expanded?"▲":"▼"}</div>
-          </div>
-        </div>
-
-        {/* Expanded controls */}
-        {expanded && (
-          <div style={{borderTop:"1px solid #1A2E4A",padding:"12px 16px",display:"flex",flexDirection:"column",gap:10}}>
-            {/* Role switcher */}
-            <div>
-              <div style={{fontSize:11,color:"#4A6280",marginBottom:6,letterSpacing:"1px",textTransform:"uppercase"}}>Role</div>
-              <div style={{display:"flex",gap:6}}>
-                {["spending_bank","bills_bank","credit_card","holding"].map(r=>(
-                  <button key={r} onClick={()=>onSetRole(a.last4,r)}
-                    style={{padding:"5px 12px",borderRadius:20,border:"none",cursor:"pointer",
-                      fontFamily:"'DM Sans',sans-serif",fontSize:12,fontWeight:600,
-                      background: a.role===r ? (ROLE_COLORS[r]||"#4A6280") : (ROLE_COLORS[r]||"#4A6280")+"20",
-                      color: a.role===r ? "#0A1628" : (ROLE_COLORS[r]||"#4A6280")}}>
-                    {ROLE_LABELS[r]}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Income rank reorder */}
-            {a.role==="spending_bank" && (
-              <div>
-                <div style={{fontSize:11,color:"#4A6280",marginBottom:6,letterSpacing:"1px",textTransform:"uppercase"}}>Priority</div>
-                <div style={{display:"flex",gap:6}}>
-                  {i > 0 && <button className="pill pill-up" onClick={()=>onReorder(a.last4,"up")}>↑ Move up</button>}
-                  {i < totalInRole-1 && <button className="pill pill-down" onClick={()=>onReorder(a.last4,"down")}>↓ Move down</button>}
-                </div>
-              </div>
-            )}
-
-            {/* Due day for spending */}
-            {a.role==="credit_card" && (
-              <div>
-                <div style={{fontSize:11,color:"#4A6280",marginBottom:6,letterSpacing:"1px",textTransform:"uppercase"}}>Due Day</div>
-                <div style={{display:"flex",alignItems:"center",gap:10}}>
-                  <input className="text-input" style={{maxWidth:80,padding:"7px 10px",fontSize:13}}
-                    placeholder="e.g. 15" type="number" inputMode="numeric" min="1" max="31"
-                    defaultValue={a.dueDay??""} key={a.last4+"_due"}
-                    onBlur={e=>onSetDueDay(a.last4,e.target.value||null)}/>
-                  <span style={{fontSize:12,color:"#2E4A6A"}}>of each month</span>
-                </div>
-              </div>
-            )}
-
-            {/* Float for spending_bank and bills_bank */}
-            {(a.role==="spending_bank" || a.role==="bills_bank") && (
-              <div>
-                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:8}}>
-                  <div style={{fontSize:11,color:"#4A6280",letterSpacing:"1px",textTransform:"uppercase"}}>Operating Float</div>
-                  <button className={`toggle ${a.floatEnabled!==false?"on":"off"}`}
-                    onClick={()=>onSetDueDay(a.last4+"_floatEnabled",a.floatEnabled===false?"on":"off")}>
-                    <div className="toggle-knob"/>
-                  </button>
-                </div>
-                {a.floatEnabled!==false && (
-                  <div style={{display:"flex",alignItems:"center",gap:10}}>
-                    <input className="text-input" style={{maxWidth:70,padding:"7px 10px",fontSize:13}}
-                      placeholder="1.5" type="number" inputMode="decimal" step="0.1"
-                      defaultValue={a.floatMultiplier??1.5} key={a.last4+"_float"}
-                      onBlur={e=>onSetDueDay(a.last4+"_float",e.target.value||"1.5")}/>
-                    <span style={{fontSize:12,color:"#2E4A6A"}}>× monthly flow target</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Remove */}
-            <button className="pill pill-red" style={{alignSelf:"flex-start"}}
-              onClick={()=>{onRemoveAccount(a.last4);setExpandId(null);}}>
-              Remove account
-            </button>
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  const allSorted = [
-    ...spendingBanks,
-    ...billsBanks,
-    ...creditCards,
-    ...holdingAccts,
-  ];
-
-  return (
-    <div className="screen">
-      <div className="header">
-        <div className="header-label">Accounts</div>
-        <div style={{fontSize:13,color:"#4A6280"}}>{accounts.length} total</div>
-      </div>
-
-      <div style={{padding:"0 16px",marginBottom:24}}>
-        {allSorted.length === 0 && (
-          <div className="history-empty">No accounts yet.<br/>Add your first account below.</div>
-        )}
-        {allSorted.map((a,i) => {
-          const inRole = a.role==="spending_bank" ? spendingBanks : a.role==="bills_bank" ? billsBanks : a.role==="credit_card" ? creditCards : holdingAccts;
-          const idxInRole = inRole.findIndex(x=>x.last4===a.last4);
-          return <AccountRow key={a.last4} a={a} i={idxInRole} totalInRole={inRole.length}/>;
-        })}
-      </div>
-
-      {/* Add Account */}
-      <div className="section-label">Add Account</div>
-      <div className="add-form">
-        <div className="add-form-title">New Account</div>
-        <div className="role-toggle">
-          {["spending_bank","bills_bank","credit_card","holding"].map(r=>(
-            <button key={r} className={`role-btn ${newRole===r?"active":""}`} onClick={()=>setNewRole(r)}>
-              {ROLE_LABELS[r]}
-            </button>
-          ))}
-        </div>
-        <div className="input-row" style={{marginBottom:10}}>
-          <input className="text-input" placeholder="Label (e.g. Chase Checking)"
-            value={newLabel} onChange={e=>setNewLabel(e.target.value)}/>
-        </div>
-        <div className="input-row">
-          <input className="text-input" placeholder="Last 4 digits" value={newLast4}
-            maxLength={4} onChange={e=>setNewLast4(e.target.value)} inputMode="numeric"/>
-          <button className="add-btn" onClick={handleAdd}>Add</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-
-// ─── HoldingsTab ─────────────────────────────────────────────────────────────
-// Accounts with role "holding" — balances visible, not in Safe-to-Spend calc
-
-function HoldingsTab({ accounts, snapshots, investments, latestBalance, investThresholds,
-                       onAddInvest, onEditInvest, onDeleteInvest }) {
-  const holdingAccts = accounts.filter(a => a.role === "holding");
-  const totalHeld    = holdingAccts.reduce((s,a) => s + (latestBalance(a.last4)??0), 0);
-  const totalGoal    = investments.reduce((s,i) => s + (parseFloat(i.goal)||0), 0);
-  const totalInvested= investments.reduce((s,i) => s + (parseFloat(i.current)||0), 0);
-  const overallPct   = totalGoal > 0 ? Math.min(100, Math.round((totalInvested/totalGoal)*100)) : 0;
-
-  const [showForm, setShowForm] = useState(false);
-  const [editing,  setEditing]  = useState(null);
-  function handleSave(v) {
-    if (v.id) onEditInvest(v); else onAddInvest(v);
-    setShowForm(false); setEditing(null);
-  }
-
-  return (
-    <div className="screen">
-      <div className="header">
-        <div className="header-label">Investments</div>
-        <div style={{fontSize:13,color:"#4A6280"}}>{overallPct}% to goal</div>
-      </div>
-
-      {/* Total holdings hero */}
-      <div className="invest-tab-hero">
-        <div className="invest-total-label">Total Holdings</div>
-        <div className="invest-total-val" style={{color: (() => {
-          const pct = overallPct;
-          const g=parseInt(investThresholds?.green||75), y=parseInt(investThresholds?.yellow||40), r=parseInt(investThresholds?.red||10);
-          return pct>=g?"#00D4AA":pct>=y?"#F5C842":pct>=r?"#F5A623":"#FF6B6B";
-        })()}}>{fmtShort(totalHeld)}</div>
-        <div className="invest-total-sub">
-          {holdingAccts.length} account{holdingAccts.length!==1?"s":""} · not counted in Safe to Spend
-        </div>
-        {totalGoal > 0 && (
-          <>
-            <div style={{marginTop:16}}>
-              <div style={{display:"flex",justifyContent:"space-between",marginBottom:6}}>
-                <span style={{fontSize:12,color:"#4A6280"}}>Overall goal progress</span>
-                <span style={{fontSize:12,color:"#00D4AA",fontFamily:"'Space Grotesk',monospace"}}>{overallPct}%</span>
-              </div>
-              <div className="progress-bar" style={{height:8}}>
-                <div className="progress-fill" style={{width:`${overallPct}%`}}/>
-              </div>
-              <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
-                <span style={{fontSize:11,color:"#4A6280"}}>{fmt(totalInvested)} invested</span>
-                <span style={{fontSize:11,color:"#4A6280"}}>{fmt(totalGoal)} goal</span>
-              </div>
-            </div>
-          </>
-        )}
-      </div>
-
-      {/* Holding account balances */}
-      {holdingAccts.length > 0 && (
-        <>
-          <div className="section-label">Accounts</div>
-          <div className="holding-list">
-            {holdingAccts.map(a => {
-              const bal = latestBalance(a.last4);
-              // Match to investment goal
-              const goal = investments.find(i => i.linkedAcct === a.last4);
-              const pct  = goal && parseFloat(goal.goal)>0
-                ? Math.min(100,Math.round(((bal??0)/parseFloat(goal.goal))*100)) : null;
-              return (
-                <div className="holding-card" key={a.last4}>
-                  <div>
-                    <div className="holding-label">{a.label}</div>
-                    <div className="holding-last4">•••• {a.last4}</div>
-                    {goal && <div style={{fontSize:11,color:"#4A6280",marginTop:3}}>Goal: {fmt(parseFloat(goal.goal)||0)}</div>}
-                  </div>
-                  <div style={{textAlign:"right"}}>
-                    {bal !== null
-                      ? <div className="holding-bal">{fmt(bal)}</div>
-                      : <div style={{fontSize:13,color:"#2E4A6A"}}>No balance</div>}
-                    {pct !== null && <div style={{fontSize:11,color:"#4A6280",marginTop:2}}>{pct}%</div>}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </>
-      )}
-
-      {holdingAccts.length === 0 && (
-        <div className="history-empty">
-          No investment accounts yet.<br/>
-          Add accounts in Settings and set their role to "Holding".
-        </div>
-      )}
-
-      {/* Investment Goals */}
-      <div className="section-label">Goals</div>
-      <div className="invest-list" style={{marginBottom:100}}>
-        {investments.length === 0 && (
-          <div className="history-empty" style={{padding:"24px 0"}}>No goals yet. Tap + to add one.</div>
-        )}
-        {investments.map(inv => {
-          const cur  = parseFloat(inv.current) || 0;
-          const goal = parseFloat(inv.goal) || 0;
-          const pct  = goal > 0 ? Math.min(100, Math.round((cur/goal)*100)) : 0;
-          const target = inv.targetType==="age" ? `By age ${inv.targetAge}` : inv.targetDate||"No target set";
-          return (
-            <div className="invest-card" key={inv.id}>
-              <div className="invest-top">
-                <div>
-                  <div className="invest-name">{inv.name}</div>
-                  <div className="invest-date">{target}</div>
-                </div>
-                <div className="invest-pct">{pct}%</div>
-              </div>
-              <div className="invest-track">
-                <div><div className="invest-track-lbl">Current</div><div className="invest-track-val">{fmt(cur)}</div></div>
-                <div style={{textAlign:"right"}}><div className="invest-track-lbl">Goal</div><div className="invest-track-val">{fmt(goal)}</div></div>
-              </div>
-              <div className="progress-bar"><div className="progress-fill" style={{width:`${pct}%`}}/></div>
-              {inv.notes && <div style={{fontSize:12,color:"#4A6280",marginBottom:10}}>{inv.notes}</div>}
-              <div className="invest-actions">
-                <button className="bill-action-btn btn-edit" onClick={()=>{setEditing(inv);setShowForm(true);}}>Edit</button>
-                <button className="bill-action-btn btn-delete" onClick={()=>onDeleteInvest(inv.id)}>Remove</button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <button className="fab" onClick={()=>{setEditing(null);setShowForm(true);}}>+</button>
-      {showForm && (
-        <InvestForm inv={editing||EMPTY_INVEST} onSave={handleSave}
-          onCancel={()=>{setShowForm(false);setEditing(null);}}/>
-      )}
-    </div>
-  );
-}
-
-
-// ─── Root ─────────────────────────────────────────────────────────────────────
-
-export default function App() {
-  const [tab, setTab]               = useState("spending");
-  const [accounts, setAccounts]     = useState(() => load("s2s_accounts",      DEFAULT_ACCOUNTS));
-  const [snapshots, setSnapshots]   = useState(() => load("s2s_snapshots",     DEFAULT_SNAPSHOTS));
-  const [thresholds, setThresholds] = useState(() => load("s2s_thresholds",    DEFAULT_THRESHOLDS));
-  const [thresholdMode, setThresholdMode] = useState(() => load("s2s_tmode",   DEFAULT_THRESHOLD_MODE));
-  const [dueThresholds,    setDueThresholds]    = useState(() => load("s2s_due_thr",    DEFAULT_DUE_THRESHOLDS));
-  const [investThresholds, setInvestThresholds] = useState(() => load("s2s_inv_thr",   DEFAULT_INVEST_THRESHOLDS));
-
-  const [bills,       setBills]       = useState(() => load("s2s_bills",       []));
-  const [paycheck,    setPaycheck]    = useState(() => load("s2s_paycheck",    { netPay:"", frequency:"biweekly" }));
-  const [billsOverride, setBillsOverride] = useState(() => load("s2s_bills_override", null));
-  const [roadmap,     setRoadmap]     = useState(() => load("s2s_roadmap",     DEFAULT_ROADMAP));
-    const [investments, setInvestments] = useState(() => load("s2s_investments", []));
-  const [heroKey, setHeroKey]       = useState(0);
-  const [smsText, setSmsText]       = useState("");
-  const [smsResult, setSmsResult]   = useState(null);
-  const [manualAcct, setManualAcct] = useState("");
-  const [manualBal, setManualBal]   = useState("");
-  const [toast, setToast]           = useState(null);
-  const toastRef = useRef();
-  const _swipeX   = useRef(0);
-
-  // Persist to localStorage via wrapper setters below
-  function setAccountsP(v)      { const val = typeof v === "function" ? v(accounts)  : v; save("s2s_accounts",   val); setAccounts(val);      }
-  function setSnapshotsP(v)     { const val = typeof v === "function" ? v(snapshots) : v; save("s2s_snapshots",  val); setSnapshots(val);     }
-  function setThresholdsP(v)    { const val = typeof v === "function" ? v(thresholds): v; save("s2s_thresholds", val); setThresholds(val);    }
-  function setThresholdModeP(v) { const val = typeof v === "function" ? v(thresholdMode):v; save("s2s_tmode",   val); setThresholdMode(val); }
-  function setDueThresholdsP(v)    { const val = typeof v === "function" ? v(dueThresholds):v;    save("s2s_due_thr",    val); setDueThresholds(val);    }
-  function setInvestThresholdsP(v) { const val = typeof v === "function" ? v(investThresholds):v; save("s2s_inv_thr",   val); setInvestThresholds(val); }
-  function setBillsP(v)          { const val = typeof v === "function" ? v(bills):v;          save("s2s_bills",       val); setBills(val);         }
-  function setPaycheckP(v)          { const val = typeof v === "function" ? v(paycheck):v;       save("s2s_paycheck",       val); setPaycheck(val);         }
-  function setBillsOverrideP(v)     { const val = typeof v === "function" ? v(billsOverride):v;  save("s2s_bills_override", val); setBillsOverride(val);    }
-  function setRoadmapP(v)        { const val = typeof v === "function" ? v(roadmap):v;        save("s2s_roadmap",     val); setRoadmap(val);       }
-  function setInvestmentsP(v)    { const val = typeof v === "function" ? v(investments):v;    save("s2s_investments", val); setInvestments(val);   }
-
-  function showToast(msg) {
-    setToast(null);
-    setTimeout(() => setToast(msg), 10);
-    clearTimeout(toastRef.current);
-    toastRef.current = setTimeout(() => setToast(null), 2400);
-  }
-
-  function latestBalance(last4) {
-    const snaps = snapshots.filter(s => s.accountLast4 === last4);
-    if (!snaps.length) return null;
-    return snaps.reduce((a,b) => new Date(a.timestamp) > new Date(b.timestamp) ? a : b).balance;
-  }
-
-  // First-ever recorded balance for an account (used as "starting balance" for % mode)
-  function firstBalance(last4) {
-    const snaps = snapshots.filter(s => s.accountLast4 === last4);
-    if (!snaps.length) return null;
-    return snaps.reduce((a,b) => new Date(a.timestamp) < new Date(b.timestamp) ? a : b).balance;
-  }
-
-  const { safeToSpend, residuals } = computeWaterfall(accounts, latestBalance);
-
-  function ingestBalance(last4, balance, source) {
-    if (isDuplicate(snapshots, last4, balance, source)) return false;
-    setSnapshotsP(prev => [{ id: Date.now(), accountLast4: last4, balance, timestamp: nowISO(), source }, ...prev]);
-    setHeroKey(k => k + 1);
-    return true;
-  }
-
-  function handleParseSMS() {
-    const result = parseSMS(smsText.trim());
-    if (!result) { setSmsResult({ ok:false, msg:"Couldn't parse a balance. Check the format." }); return; }
-
-    if (result.type === "cardname") {
-      // No digits found — ask user to pick which account this card maps to
-      setSmsResult({
-        ok: "confirm",
-        cardName: result.cardName,
-        balance: result.balance,
-        msg: `Found "${result.cardName}" — ${fmt(result.balance)}. Which account is this?`,
-      });
-      return;
-    }
-
-    // Normal digits path
-    if (!accounts.find(a => a.last4 === result.accountLast4)) {
-      const nextRank = accounts.filter(a => a.role === "spending_bank").length;
-      setAccountsP(prev => [...prev, { last4: result.accountLast4, label: result.label + " •" + result.accountLast4, role: "spending_bank", incomeRank: nextRank }]);
-    }
-    if (!ingestBalance(result.accountLast4, result.balance, "sms")) {
-      setSmsResult({ ok:false, msg:"Duplicate — same balance within 2 minutes." }); return;
-    }
-    setSmsResult({ ok:true, msg:`Saved: •${result.accountLast4} → ${fmt(result.balance)}` });
-    setSmsText("");
-    showToast("Balance updated");
-  }
-
-  function handleConfirmCardAccount(last4, balance) {
-    if (!ingestBalance(last4, balance, "sms")) {
-      setSmsResult({ ok:false, msg:"Duplicate — same balance within 2 minutes." }); return;
-    }
-    setSmsResult({ ok:true, msg:`Saved: •${last4} → ${fmt(balance)}` });
-    setSmsText("");
-    showToast("Balance updated");
-  }
-
-  function handleManualSave() {
-    const bal = parseFloat(String(manualBal).replace(/[^0-9.]/g,""));
-    if (!manualAcct || isNaN(bal)) return;
-    ingestBalance(manualAcct, bal, "manual");
-    setManualBal("");
-    showToast("Balance saved");
-  }
-
-  function handleSetRole(last4, newRole) {
-    setAccountsP(prev => {
-      const updated = prev.map(a => {
-        if (a.last4 !== last4) return a;
-        if (newRole === "income") {
-          const maxRank = Math.max(-1, ...prev.filter(x => x.role === "spending_bank" && x.last4 !== last4).map(x => x.incomeRank));
-          return { ...a, role: "spending_bank", incomeRank: maxRank + 1 };
-        }
-        if (newRole === "holding") return { ...a, role: "holding", incomeRank: null };
-        return { ...a, role: "credit_card", incomeRank: null };
-      });
-      return rerank(updated);
-    });
-    setHeroKey(k => k + 1);
-    showToast("Account role updated");
-  }
-
-  function rerank(accts) {
-    const income = accts.filter(a => a.role === "spending_bank").sort((a,b) => (a.incomeRank ?? 99) - (b.incomeRank ?? 99));
-    let rank = 0;
-    return accts.map(a => {
-      if (a.role !== "spending_bank") return a;
-      const r = income.findIndex(x => x.last4 === a.last4);
-      return { ...a, incomeRank: r };
-    });
-  }
-
-  function handleReorder(last4, dir) {
-    setAccountsP(prev => {
-      const income = prev.filter(a => a.role === "spending_bank").sort((a,b) => a.incomeRank - b.incomeRank);
-      const idx = income.findIndex(a => a.last4 === last4);
-      const swapIdx = dir === "up" ? idx - 1 : idx + 1;
-      if (swapIdx < 0 || swapIdx >= income.length) return prev;
-      const a = income[idx], b = income[swapIdx];
-      return prev.map(acct => {
-        if (acct.last4 === a.last4) return { ...acct, incomeRank: b.incomeRank };
-        if (acct.last4 === b.last4) return { ...acct, incomeRank: a.incomeRank };
-        return acct;
-      });
-    });
-    setHeroKey(k => k + 1);
-  }
-
-  function handleRemoveAccount(last4) {
-    setAccountsP(prev => rerank(prev.filter(a => a.last4 !== last4)));
-    showToast("Account removed");
-  }
-
-  function handleSetDueDay(key, val) {
-    if (key.endsWith("_floatEnabled")) {
-      const last4 = key.replace("_floatEnabled","");
-      setAccountsP(prev => prev.map(a => a.last4===last4 ? {...a, floatEnabled: val==="on"} : a));
-    } else if (key.endsWith("_float")) {
-      const last4 = key.replace("_float","");
-      setAccountsP(prev => prev.map(a => a.last4===last4 ? {...a, floatMultiplier: parseFloat(val)||1.5} : a));
-    } else {
-      setAccountsP(prev => prev.map(a => a.last4===key ? {...a, dueDay: val ? parseInt(val) : null} : a));
-    }
-  }
-
-  function handleAddAccount(l4, label, role) {
-    if (accounts.find(a => a.last4 === l4)) { showToast("Account already exists"); return; }
-    const nextRank = role === "spending_bank" ? accounts.filter(a => a.role === "spending_bank").length : null;
-    setAccountsP(prev => [...prev, { last4: l4, label, role, incomeRank: nextRank }]);
-    showToast("Account added");
-  }
-
-  // ── Bill handlers ──────────────────────────────────────────────────────────
-  function handleAddBill(b)    { const nb = {...b, id: Date.now()}; setBillsP(prev => [...prev, nb]); showToast("Bill added"); }
-  function handleEditBill(b)   { setBillsP(prev => prev.map(x => x.id === b.id ? b : x)); showToast("Bill updated"); }
-  function handleDeleteBill(id){ setBillsP(prev => prev.filter(x => x.id !== id)); showToast("Bill removed"); }
-
-  // ── Investment handlers ──────────────────────────────────────────────────
-  function handleAddInvest(v)    { setInvestmentsP(prev => [...prev, {...v, id: Date.now()}]); showToast("Goal added"); }
-  function handleEditInvest(v)   { setInvestmentsP(prev => prev.map(x => x.id === v.id ? v : x)); showToast("Goal updated"); }
-  function handleDeleteInvest(id){ setInvestmentsP(prev => prev.filter(x => x.id !== id)); showToast("Goal removed"); }
-
-  const NAV = [
-    { id:"dashboard", label:"Dashboard",Icon:IconDashboard },
-    { id:"spending",  label:"Spending", Icon:IconHome      },
-    { id:"bills",     label:"Bills",    Icon:IconBills     },
-    { id:"invest",    label:"Invest",   Icon:IconInvest    },
-    { id:"roadmap",   label:"Roadmap",  Icon:IconRoadmap   },
-    { id:"accounts",  label:"Accounts", Icon:IconAccounts  },
-    { id:"settings",  label:"Settings", Icon:IconSettings  },
-  ];
-
-  return (
-    <>
-      <style>{S}</style>
-      <div className="app"
-        onTouchStart={e=>{_swipeX.current=e.touches[0].clientX;}}
-        onTouchEnd={e=>{
-          const dx=e.changedTouches[0].clientX - _swipeX.current;
-          if(Math.abs(dx)<50)return;
-          const ids=NAV.map(n=>n.id);
-          const cur=ids.indexOf(tab);
-       //   if(dx<0 && cur<ids.length-1) setTab(ids[cur+1]);
-      //    if(dx>0 && cur>0)            setTab(ids[cur-1]);
+      {/* ── Scroll field ── */}
+      <div style={{flex:1,overflowY:"auto",padding:"10px 14px 0"}}>
+
+        {/* Stats */}
+        <div style={{
+          display:"flex",justifyContent:"space-between",
+          background:t.statBg,border:`1px solid ${t.statBorder}`,
+          borderRadius:8,padding:"6px 12px",marginBottom:10,
+          fontSize:11,color:t.textMid,letterSpacing:1,textTransform:"uppercase",
         }}>
-        {toast && <div className="toast" key={toast}>{toast}</div>}
+          <span>Open <b style={{color:t.textBright}}>{openCount}</b></span>
+          <span>Closed <b style={{color:t.textMid}}>{closedCount}</b></span>
+          {cursedCount>0&&<span>Cursed <b style={{color:t.danger}}>{cursedCount}</b></span>}
+          {total>0&&phase!==PHASE.IDLE&&<span>Target <b style={{color:t.accent}}>{total}</b></span>}
+        </div>
 
-        {tab === "spending" && (
-          <SpendingScreen
-            accounts={accounts} snapshots={snapshots}
-            safeToSpend={safeToSpend} residuals={residuals}
-            thresholds={thresholds} thresholdMode={thresholdMode}
-            heroKey={heroKey}
-            smsText={smsText} setSmsText={setSmsText}
-            smsResult={smsResult} onParseSMS={handleParseSMS}
-            onConfirmCard={handleConfirmCardAccount}
-            manualAcct={manualAcct} setManualAcct={setManualAcct}
-            manualBal={manualBal} setManualBal={setManualBal}
-            onManualSave={handleManualSave}
-            latestBalance={latestBalance} firstBalance={firstBalance} dueThresholds={dueThresholds}
-          />
-        )}
-        {tab === "dashboard" && (
-          <DashboardScreen
-            safeToSpend={safeToSpend} thresholds={thresholds} thresholdMode={thresholdMode}
-            firstBalance={firstBalance} accounts={accounts} bills={bills}
-            paycheck={paycheck} roadmap={roadmap} snapshots={snapshots}
-            latestBalance={latestBalance} dueThresholds={dueThresholds}
-            billsOverride={billsOverride}
-          />
-        )}
-        {tab === "bills" && (
-          <BillsScreen
-            bills={bills} accounts={accounts}
-            onAddBill={handleAddBill} onEditBill={handleEditBill} onDeleteBill={handleDeleteBill}
-            latestBalance={latestBalance} dueThresholds={dueThresholds}
-            paycheck={paycheck} onSavePaycheck={setPaycheckP}
-            billsOverride={billsOverride} onSaveBillsOverride={setBillsOverrideP}
-          />
+        {/* Current player banner */}
+        {!isSolo&&(
+          <div style={{textAlign:"center",marginBottom:8,fontSize:14,color:t.textBright,fontWeight:"bold"}}>
+            {players[currentPlayer]}'s turn
+          </div>
         )}
 
-        {tab === "accounts" && (
-          <AccountsScreen
-            accounts={accounts} snapshots={snapshots}
-            onSetRole={handleSetRole} onReorder={handleReorder}
-            onRemoveAccount={handleRemoveAccount} onAddAccount={handleAddAccount}
-            onSetDueDay={handleSetDueDay} latestBalance={latestBalance}
-          />
-        )}
-        {tab === "roadmap" && (
-          <KataRoadmap roadmap={roadmap} onUpdateRoadmap={setRoadmapP} />
-        )}
-        {tab === "invest" && (
-          <HoldingsTab
-            accounts={accounts} snapshots={snapshots} investments={investments}
-            latestBalance={latestBalance} investThresholds={investThresholds}
-            onAddInvest={handleAddInvest} onEditInvest={handleEditInvest} onDeleteInvest={handleDeleteInvest}
-          />
-        )}
-        {tab === "settings" && (
-          <SettingsScreen
-            thresholds={thresholds} thresholdMode={thresholdMode}
-            dueThresholds={dueThresholds} investThresholds={investThresholds}
-            onSaveThresholds={setThresholdsP} onSaveThresholdMode={setThresholdModeP}
-            onSaveDueThresholds={setDueThresholdsP} onSaveInvestThresholds={setInvestThresholdsP}
-            snapshots={snapshots} accounts={accounts}
-            bills={bills} paycheck={paycheck} billsOverride={billsOverride}
-            roadmap={roadmap} investments={investments}
-            setAccounts={setAccountsP} setSnapshots={setSnapshotsP}
-            setBills={setBillsP} setPaycheck={setPaycheckP}
-            setBillsOverride={setBillsOverrideP} setRoadmap={setRoadmapP}
-            setInvestments={setInvestmentsP}
-            setThresholds={setThresholdsP} setThresholdMode={setThresholdModeP}
-            setDueThresholds={setDueThresholdsP} setInvestThresholds={setInvestThresholdsP}
-            showToast={showToast}
-          />
-        )}
-
-        <nav className="nav">
-          {NAV.map(({ id, label, Icon }) => (
-            <button key={id} className={`nav-btn ${tab === id ? "active" : ""}`} onClick={() => setTab(id)}>
-              <Icon /><span className="nav-label">{label}</span>
-              {tab===id && <div style={{width:3,height:3,borderRadius:"50%",background:"#00D4AA",marginTop:1}}/>}
-            </button>
+        {/* Tiles */}
+        <div style={{display:"flex",flexWrap:"wrap",gap:7,justifyContent:"center",marginBottom:12}}>
+          {activeTiles.map(n=>(
+            <TileEl key={n} number={n} state={curTiles[n]}
+              onClick={handleTileClick} selectable={clickable(n)} selected={tileSelected(n)} t={t}/>
           ))}
-        </nav>
+        </div>
+
+        {/* Dice row */}
+        {phase!==PHASE.IDLE&&(
+          <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:14,marginBottom:10}}>
+            <Die value={effectiveDice[0]} rolling={rolling} t={t}/>
+            <span style={{color:t.textMid,fontSize:20}}>+</span>
+            <Die value={effectiveDice[1]} rolling={rolling} t={t}/>
+            <span style={{color:t.accent,fontSize:20,fontWeight:"bold"}}>= {total}</span>
+            {eventFace&&<EventFaceTag face={eventFace}/>}
+          </div>
+        )}
+
+        {/* Instructions */}
+        <div style={{textAlign:"center",minHeight:32,marginBottom:8,fontSize:13,color:t.textMid,lineHeight:1.5}}>
+          {phase===PHASE.IDLE&&"Roll the dice to begin your turn."}
+          {phase===PHASE.ROLLED&&!pendingEffect&&!isStuck&&`Select tiles summing to ${total}, then confirm.`}
+          {phase===PHASE.ROLLED&&!pendingEffect&&isStuck&&<span style={{color:t.danger}}>No valid combos for {total}. Try an event die or give up.</span>}
+          {phase===PHASE.FLIP_PICK&&"Select any tile to flip, then confirm."}
+          {phase===PHASE.BUST_PICK&&<span style={{color:t.danger}}>💀 Bust! Pick a tile to curse, then confirm.</span>}
+          {phase===PHASE.EVENT_ROLLED&&pendingEffect?.type==="+1"&&"Pick which die to add +1 to:"}
+          {phase===PHASE.EVENT_ROLLED&&pendingEffect?.type==="+2"&&"Pick which die to add +2 to:"}
+          {phase===PHASE.EVENT_ROLLED&&pendingEffect?.type==="wild"&&"Enter a value (1–6):"}
+          {phase===PHASE.EVENT_ROLLED&&pendingEffect?.type==="wild_pick"&&"Pick which die to replace:"}
+          {phase===PHASE.EVENT_ROLLED&&pendingEffect?.type==="x2"&&"Pick which die to double:"}
+        </div>
+
+        {/* Flip confirm */}
+        {phase===PHASE.FLIP_PICK&&(
+          <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:10}}>
+            <Btn onClick={confirmFlip} disabled={flipSelected===null} variant="gold" t={t}>
+              {flipSelected!==null
+                ?`⇅ Confirm flip tile ${flipSelected} (${curTiles[flipSelected]==="open"?"open→closed":"closed→open"})`
+                :"⇅ Select a tile"}
+            </Btn>
+            {flipSelected!==null&&<Btn onClick={()=>setFlipSelected(null)} variant="green" t={t}>↩ Change</Btn>}
+          </div>
+        )}
+
+        {/* Bust confirm */}
+        {phase===PHASE.BUST_PICK&&(
+          <div style={{display:"flex",gap:8,justifyContent:"center",marginBottom:10}}>
+            <Btn onClick={confirmBust} disabled={bustSelected===null} variant="red" t={t}>
+              {bustSelected!==null?`💀 Confirm curse tile ${bustSelected}`:"💀 Select a tile"}
+            </Btn>
+            {bustSelected!==null&&<Btn onClick={()=>setBustSelected(null)} variant="green" t={t}>↩ Change</Btn>}
+          </div>
+        )}
+
+        {/* Event die resolvers */}
+        {phase===PHASE.EVENT_ROLLED&&pendingEffect&&(
+          <div style={{display:"flex",flexDirection:"column",gap:9,alignItems:"center",marginBottom:10}}>
+            {(pendingEffect.type==="+1"||pendingEffect.type==="+2")&&(()=>{
+              const mod=pendingEffect.type==="+1"?1:2;
+              return(<>
+                <DiePickRow dice={effectiveDice} onPick={setDieChoice} choice={dieChoice} showAs={i=>effectiveDice[i]+mod} t={t}/>
+                <div style={{display:"flex",gap:8}}>
+                  <Btn onClick={()=>{applyMod(mod)(dieChoice);setDieChoice(null);}} disabled={dieChoice===null} variant="gold" t={t}>
+                    {dieChoice!==null?`✓ Confirm — Die ${dieChoice+1} → ${effectiveDice[dieChoice]+mod}`:"✓ Select a die"}
+                  </Btn>
+                  {dieChoice!==null&&<Btn onClick={()=>setDieChoice(null)} variant="green" t={t}>↩</Btn>}
+                </div>
+              </>);
+            })()}
+            {pendingEffect.type==="wild"&&(
+              <div style={{display:"flex",gap:8,alignItems:"center"}}>
+                <input type="number" min={1} max={6} value={wildValue} onChange={e=>setWildValue(e.target.value)}
+                  style={{width:54,padding:"8px 10px",background:"rgba(0,0,0,0.3)",border:`1px solid ${t.textDim}`,
+                    borderRadius:6,color:t.textBright,fontFamily:"'Georgia',serif",fontSize:16,textAlign:"center"}}/>
+                <Btn onClick={applyWild} variant="gold" disabled={!wildValue||parseInt(wildValue)<1||parseInt(wildValue)>6} t={t}>Set Wild</Btn>
+              </div>
+            )}
+            {pendingEffect.type==="wild_pick"&&(()=>{
+              const v=pendingEffect.value;
+              return(<>
+                <DiePickRow dice={effectiveDice} onPick={setDieChoice} choice={dieChoice} showAs={()=>v} t={t}/>
+                <div style={{display:"flex",gap:8}}>
+                  <Btn onClick={()=>{applyWildToDie(dieChoice);setDieChoice(null);}} disabled={dieChoice===null} variant="gold" t={t}>
+                    {dieChoice!==null?`✓ Confirm — Die ${dieChoice+1} → ${v}`:"✓ Select a die"}
+                  </Btn>
+                  {dieChoice!==null&&<Btn onClick={()=>setDieChoice(null)} variant="green" t={t}>↩</Btn>}
+                </div>
+              </>);
+            })()}
+            {pendingEffect.type==="x2"&&(()=>{
+              return(<>
+                <DiePickRow dice={effectiveDice} onPick={setDieChoice} choice={dieChoice} showAs={i=>effectiveDice[i]*2} t={t}/>
+                <div style={{display:"flex",gap:8}}>
+                  <Btn onClick={()=>{applyX2(dieChoice);setDieChoice(null);}} disabled={dieChoice===null} variant="gold" t={t}>
+                    {dieChoice!==null?`✓ Confirm — Die ${dieChoice+1} → ${effectiveDice[dieChoice]*2}`:"✓ Select a die"}
+                  </Btn>
+                  {dieChoice!==null&&<Btn onClick={()=>setDieChoice(null)} variant="green" t={t}>↩</Btn>}
+                </div>
+              </>);
+            })()}
+          </div>
+        )}
+
+        {/* Action buttons */}
+        <div style={{display:"flex",gap:8,justifyContent:"center",flexWrap:"wrap",marginBottom:10}}>
+          {phase===PHASE.IDLE&&<Btn onClick={rollDice} disabled={rolling} variant="gold" t={t}>🎲 Roll Dice</Btn>}
+          {phase===PHASE.ROLLED&&!pendingEffect&&(<>
+            {!eventDieUsed&&(<>
+              <Btn onClick={()=>rollEvent("safe")} variant="green" t={t}>🛡 Safe Die</Btn>
+              <Btn onClick={()=>rollEvent("risk")} variant="red" t={t}>⚡ Risk Die</Btn>
+            </>)}
+            <Btn onClick={confirmSelection} disabled={!selValid} variant="gold" t={t}>
+              ✓ Confirm ({selectedSum}/{total})
+            </Btn>
+            {isStuck&&(
+              <Btn
+                onClick={()=>{
+                  if(eventDieUsed){
+                    if(isSolo) endSolo(curTiles,false);
+                    else if(isLowest){addLog("Stuck — turn ends.");passOrNext();}
+                    else eliminate();
+                  } else {
+                    addLog(`Gave up — no combo for ${total}`);
+                    if(isSolo) setPhase(PHASE.IDLE);
+                    else passOrNext();
+                  }
+                }}
+                variant={eventDieUsed?"red":"green"} t={t}
+              >
+                {eventDieUsed?(isSolo?"✗ End Game":isLowest?"✗ End Turn":"✗ Eliminated"):"↩ Give Up Turn"}
+              </Btn>
+            )}
+          </>)}
+          {!isSolo&&phase===PHASE.IDLE&&hasRolledOnce&&(
+            <Btn onClick={passOrNext} variant="green" t={t}>➤ Pass to Next Player</Btn>
+          )}
+        </div>
+
+        {/* Log */}
+        <GameLog entries={log} t={t}/>
+
+        {/* Legend */}
+        <div style={{marginTop:8,display:"flex",flexWrap:"wrap",gap:8,justifyContent:"center",fontSize:10,color:t.textDim}}>
+          <span>● selectable</span><span>■ closed</span><span>💀 cursed</span>
+        </div>
+
+        {/* Dice reference */}
+        <div style={{marginTop:10,display:"flex",gap:8}}>
+          {[{name:"Safe Die",faces:SAFE_DIE_FACES,border:t.safePanelBorder,label:t.safeLabel},
+            {name:"Risk Die",faces:RISK_DIE_FACES,border:t.riskPanelBorder,label:t.riskLabel}]
+            .map(({name,faces,border,label})=>(
+            <div key={name} style={{flex:1,background:t.surface,border:`1px solid ${border}`,borderRadius:8,padding:"8px 10px"}}>
+              <div style={{fontSize:9,letterSpacing:2,color:label,textTransform:"uppercase",marginBottom:5,fontWeight:"bold"}}>{name}</div>
+              {faces.map((f,i)=>(
+                <div key={i} style={{display:"flex",alignItems:"center",gap:5,marginBottom:2,fontSize:11,color:t.textMid}}>
+                  <span style={{width:12,height:12,borderRadius:3,background:FACE_COLORS[f]+"33",border:`1px solid ${FACE_COLORS[f]}88`,
+                    display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:7,color:FACE_COLORS[f],flexShrink:0}}>●</span>
+                  {FACE_LABELS[f]}
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+        <div style={{height:20}}/>
       </div>
-    </>
+    </div>
   );
 }
